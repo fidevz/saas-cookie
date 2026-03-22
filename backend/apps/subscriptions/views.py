@@ -187,7 +187,7 @@ class WebhookView(APIView):
         else:
             try:
                 event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-            except stripe.errors.SignatureVerificationError as exc:
+            except stripe.error.SignatureVerificationError as exc:
                 logger.warning("Stripe signature verification failed: %s", exc)
                 return Response(
                     {"error": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST

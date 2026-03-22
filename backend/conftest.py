@@ -1,7 +1,6 @@
 """
 pytest configuration and shared fixtures.
 """
-import django
 import pytest
 from django.conf import settings
 
@@ -14,6 +13,30 @@ def reset_feature_flags(settings):
         "BILLING": True,
         "NOTIFICATIONS": True,
     }
+
+
+@pytest.fixture(autouse=True)
+def clear_throttle_cache():
+    """
+    Clear Django's cache before each test so rate-limiter state doesn't
+    carry over between tests when they all share the same test IP address.
+    """
+    from django.core.cache import cache
+    cache.clear()
+    yield
+    cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def close_db_connections_after_test():
+    """
+    Close all DB connections after every test.
+    Critical for async (Channels/WebSocket) tests where connections opened
+    in worker threads can block test DB teardown.
+    """
+    yield
+    from django.db import connections
+    connections.close_all()
 
 
 @pytest.fixture

@@ -80,8 +80,6 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         from urllib.parse import parse_qs
 
         from asgiref.sync import sync_to_async
-        from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-        from rest_framework_simplejwt.tokens import UntypedToken
 
         query_string = self.scope.get("query_string", b"").decode()
         params = parse_qs(query_string)
@@ -92,24 +90,28 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             return None
 
         raw_token = token_list[0]
-        try:
-            UntypedToken(raw_token)
-        except (InvalidToken, TokenError) as exc:
-            logger.debug("WebSocket auth failed: %s", exc)
-            return None
 
-        # Extract user from validated token
-        from rest_framework_simplejwt.settings import api_settings as jwt_settings
+        # Validate token and fetch user — both ops may hit the DB, so wrap in sync_to_async
+        @sync_to_async(thread_sensitive=False)
+        def validate_and_get_user(token_str):
+            from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+            from rest_framework_simplejwt.settings import api_settings as jwt_settings
+            from rest_framework_simplejwt.tokens import AccessToken
 
-        try:
-            token_backend = jwt_settings.TOKEN_BACKEND
-            validated = token_backend.decode(raw_token)
-            user_id = validated.get(jwt_settings.USER_ID_CLAIM)
-        except Exception:
-            return None
+            try:
+                # AccessToken validates signature, expiry, and blacklist in one call
+                token = AccessToken(token_str)
+                user_id = token[jwt_settings.USER_ID_CLAIM]
+            except (InvalidToken, TokenError) as exc:
+                logger.debug("WebSocket auth failed: %s", exc)
+                return None
+            except Exception as exc:
+                logger.warning("WebSocket auth unexpected error: %s", exc)
+                return None
 
-        get_user = sync_to_async(self._get_user)
-        return await get_user(user_id)
+            return NotificationConsumer._get_user(user_id)
+
+        return await validate_and_get_user(raw_token)
 
     @staticmethod
     def _get_user(user_id):
