@@ -63,7 +63,12 @@ ask_yes_no() {
 
   read -r -p "$(echo -e "${BOLD}${prompt}${NC} [${default}]: ")" value
   value="${value:-$default}"
-  [[ "${value,,}" == "y" || "${value,,}" == "yes" ]]
+  value="$(echo "$value" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$value" == "y" || "$value" == "yes" ]]; then
+    YN_RESULT="true"
+  else
+    YN_RESULT="false"
+  fi
 }
 
 generate_secret_key() {
@@ -96,9 +101,9 @@ OUTPUT_DIR="${OUTPUT_DIR/#\~/$HOME}"  # Expand ~
 # --- Feature flags ---
 echo ""
 print_step "Features to enable"
-ENABLE_TEAMS=$(ask_yes_no "Enable team management?" "y" && echo "true" || echo "false")
-ENABLE_BILLING=$(ask_yes_no "Enable Stripe billing?" "y" && echo "true" || echo "false")
-ENABLE_NOTIFICATIONS=$(ask_yes_no "Enable real-time notifications?" "y" && echo "true" || echo "false")
+ask_yes_no "Enable team management?" "y"; ENABLE_TEAMS="$YN_RESULT"
+ask_yes_no "Enable Stripe billing?" "y"; ENABLE_BILLING="$YN_RESULT"
+ask_yes_no "Enable real-time notifications?" "y"; ENABLE_NOTIFICATIONS="$YN_RESULT"
 
 # --- Confirm ---
 echo ""
@@ -115,7 +120,8 @@ echo -e "  Notifications: ${GREEN}${ENABLE_NOTIFICATIONS}${NC}"
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-if ! ask_yes_no "Proceed?"; then
+ask_yes_no "Proceed?"; PROCEED="$YN_RESULT"
+if [[ "$PROCEED" == "false" ]]; then
   echo "Aborted."
   exit 0
 fi
@@ -129,7 +135,8 @@ print_step "Creating project directory..."
 
 if [[ -d "$OUTPUT_DIR" ]]; then
   print_error "Directory already exists: $OUTPUT_DIR"
-  if ! ask_yes_no "Continue anyway (this may overwrite files)?"; then
+  ask_yes_no "Continue anyway (this may overwrite files)?"; OVERWRITE="$YN_RESULT"
+  if [[ "$OVERWRITE" == "false" ]]; then
     exit 1
   fi
 fi
