@@ -1,0 +1,173 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "back": "Atrás",
+    "submit": "Enviar",
+    "continue": "Continuar",
+    "or": "o"
+  },
+  "nav": {
+    "features": "Características",
+    "pricing": "Precios",
+    "docs": "Documentación",
+    "signIn": "Iniciar sesión",
+    "getStarted": "Comenzar",
+    "dashboard": "Panel",
+    "billing": "Facturación",
+    "team": "Equipo",
+    "settings": "Configuración",
+    "signOut": "Cerrar sesión"
+  },
+  "auth": {
+    "login": {
+      "title": "Bienvenido de nuevo",
+      "subtitle": "Ingresa tus credenciales para iniciar sesión",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "submit": "Iniciar sesión",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "noAccount": "¿No tienes una cuenta?",
+      "signUp": "Regístrate",
+      "continueWithGoogle": "Continuar con Google"
+    },
+    "register": {
+      "title": "Crea tu cuenta",
+      "subtitle": "Comienza tu prueba gratuita hoy",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "submit": "Crear cuenta",
+      "haveAccount": "¿Ya tienes una cuenta?",
+      "signIn": "Iniciar sesión",
+      "continueWithGoogle": "Continuar con Google",
+      "terms": "Al registrarte, aceptas nuestros",
+      "termsLink": "Términos de servicio",
+      "and": "y",
+      "privacyLink": "Política de privacidad"
+    },
+    "forgotPassword": {
+      "title": "Restablecer tu contraseña",
+      "subtitle": "Ingresa tu correo y te enviaremos un enlace de restablecimiento",
+      "email": "Correo electrónico",
+      "submit": "Enviar enlace de restablecimiento",
+      "backToLogin": "Volver a iniciar sesión",
+      "success": "Revisa tu correo electrónico para un enlace de restablecimiento"
+    },
+    "resetPassword": {
+      "title": "Establecer nueva contraseña",
+      "subtitle": "Ingresa tu nueva contraseña a continuación",
+      "password": "Nueva contraseña",
+      "submit": "Restablecer contraseña",
+      "success": "Contraseña restablecida exitosamente"
+    }
+  },
+  "landing": {
+    "hero": {
+      "badge": "Anunciando nuestras nuevas características",
+      "title": "Construye tu SaaS\nmás rápido que nunca",
+      "subtitle": "Todo lo que necesitas para lanzar tu producto. Auth, facturación, equipos y más — todo listo para usar.",
+      "cta": "Comenzar gratis",
+      "ctaSecondary": "Ver demo",
+      "trustedBy": "Con la confianza de equipos en"
+    },
+    "features": {
+      "title": "Todo lo que necesitas",
+      "subtitle": "Una base completa para construir tu producto SaaS",
+      "items": {
+        "auth": { "title": "Autenticación", "description": "Correo/contraseña y Google OAuth listos para usar" },
+        "billing": { "title": "Facturación con Stripe", "description": "Suscripciones, pruebas y portal de clientes listos" },
+        "teams": { "title": "Gestión de equipos", "description": "Invita miembros, gestiona roles y permisos" },
+        "multitenancy": { "title": "Multi-tenancy", "description": "Espacios de trabajo aislados para cada cliente" },
+        "notifications": { "title": "Notificaciones en tiempo real", "description": "Bandeja de entrada impulsada por WebSocket" },
+        "i18n": { "title": "Internacionalización", "description": "Soporte integrado para múltiples idiomas" }
+      }
+    },
+    "pricing": {
+      "title": "Precios simples y transparentes",
+      "subtitle": "Elige el plan que se adapte a tus necesidades",
+      "monthly": "Mensual",
+      "annually": "Anual",
+      "save": "Ahorra 20%",
+      "cta": "Comenzar",
+      "popular": "Más popular"
+    },
+    "cta": {
+      "title": "¿Listo para comenzar?",
+      "subtitle": "Únete a miles de equipos que construyen con nuestra plataforma",
+      "button": "Comenzar gratis"
+    }
+  },
+  "dashboard": {
+    "greeting": "¡Buenos {timeOfDay}, {name}!",
+    "welcome": "Bienvenido a {appName}",
+    "subtitle": "Aquí hay un resumen de tu cuenta"
+  },
+  "billing": {
+    "title": "Facturación",
+    "currentPlan": "Plan actual",
+    "manage": "Gestionar suscripción",
+    "cancel": "Cancelar suscripción",
+    "cancelConfirm": {
+      "title": "Cancelar suscripción",
+      "subtitle": "Lamentamos verte ir. ¿Te importaría decirnos por qué?",
+      "reasons": {
+        "tooExpensive": "Demasiado caro",
+        "missingFeatures": "Faltan características que necesito",
+        "notUsing": "No lo uso suficiente",
+        "foundAlternative": "Encontré una mejor alternativa",
+        "other": "Otro"
+      },
+      "confirm": "Cancelar suscripción",
+      "keep": "Mantener suscripción"
+    }
+  },
+  "team": {
+    "title": "Equipo",
+    "invite": "Invitar miembro",
+    "inviteEmail": "Dirección de correo",
+    "inviteRole": "Rol",
+    "roles": {
+      "admin": "Administrador",
+      "member": "Miembro"
+    },
+    "sendInvite": "Enviar invitación",
+    "inviteSent": "¡Invitación enviada!",
+    "removeConfirm": "¿Estás seguro de que quieres eliminar a este miembro?",
+    "changeRole": "Cambiar rol"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "markAllRead": "Marcar todo como leído",
+    "empty": "Sin notificaciones",
+    "welcome": {
+      "title": "¡Bienvenido a {appName}!",
+      "body": "Nos alegra que estés aquí. Explora el panel para comenzar."
+    }
+  },
+  "legal": {
+    "tos": { "title": "Términos de servicio", "lastUpdated": "Última actualización: enero de 2025" },
+    "privacy": { "title": "Política de privacidad", "lastUpdated": "Última actualización: enero de 2025" }
+  },
+  "support": {
+    "title": "Soporte",
+    "subtitle": "¿Cómo podemos ayudarte?",
+    "name": "Tu nombre",
+    "email": "Dirección de correo",
+    "subject": "Asunto",
+    "message": "Mensaje",
+    "submit": "Enviar mensaje",
+    "success": "¡Mensaje enviado! Te responderemos pronto."
+  },
+  "invite": {
+    "title": "Has sido invitado",
+    "subtitle": "Únete a {tenantName} en {appName}",
+    "accept": "Aceptar invitación",
+    "expired": "Esta invitación ha expirado",
+    "alreadyMember": "Ya eres miembro"
+  }
+}

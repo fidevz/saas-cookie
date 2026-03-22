@@ -1,0 +1,77 @@
+# English translations for SaaS Boilerplate.
+# Copyright (C) 2024
+# This file is distributed under the same license as the project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: saas_boilerplate 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: apps/notifications/signals.py
+msgid "Welcome to %(app_name)s!"
+msgstr "Welcome to %(app_name)s!"
+
+#: apps/notifications/signals.py
+msgid "We're excited to have you. Get started by exploring the dashboard."
+msgstr "We're excited to have you. Get started by exploring the dashboard."
+
+#: apps/tenants/models.py
+msgid "Admin"
+msgstr "Admin"
+
+#: apps/tenants/models.py
+msgid "Member"
+msgstr "Member"
+
+#: apps/subscriptions/models.py
+msgid "Monthly"
+msgstr "Monthly"
+
+#: apps/subscriptions/models.py
+msgid "Yearly"
+msgstr "Yearly"
+
+#: apps/subscriptions/models.py
+msgid "Trialing"
+msgstr "Trialing"
+
+#: apps/subscriptions/models.py
+msgid "Active"
+msgstr "Active"
+
+#: apps/subscriptions/models.py
+msgid "Cancelling (active until period end)"
+msgstr "Cancelling (active until period end)"
+
+#: apps/subscriptions/models.py
+msgid "Cancelled"
+msgstr "Cancelled"
+
+#: apps/subscriptions/models.py
+msgid "Past Due"
+msgstr "Past Due"
+
+#: apps/subscriptions/models.py
+msgid "Unpaid"
+msgstr "Unpaid"
+
+#: apps/authentication/serializers.py
+msgid "A user with that email already exists."
+msgstr "A user with that email already exists."
+
+#: apps/authentication/serializers.py
+msgid "Unable to log in with provided credentials."
+msgstr "Unable to log in with provided credentials."
+
+#: apps/authentication/serializers.py
+msgid "User account is disabled."
+msgstr "User account is disabled."

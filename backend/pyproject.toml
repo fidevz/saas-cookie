@@ -1,0 +1,54 @@
+[project]
+name = "saas_boilerplate"
+version = "0.1.0"
+description = "saas_boilerplate backend"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.1",
+    "djangorestframework>=3.15",
+    "djangorestframework-simplejwt>=5.3",
+    "dj-rest-auth[with_social]>=7.0",
+    "django-allauth>=65.0",
+    "django-cors-headers>=4.4",
+    "drf-spectacular>=0.27",
+    "stripe>=11.0",
+    "celery[redis]>=5.4",
+    "channels[daphne]>=4.1",
+    "channels-redis>=4.2",
+    "sentry-sdk[django]>=2.0",
+    "posthog>=3.0",
+    "resend>=2.0",
+    "uvicorn[standard]>=0.32",
+    "psycopg[binary]>=3.2",
+    "python-decouple>=3.8",
+    "django-extensions>=3.2",
+    "django-filter>=24.3",
+    "pillow>=11.0",
+    "dj-database-url>=2.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0",
+    "pytest-django>=4.9",
+    "pytest-asyncio>=0.24",
+    "factory-boy>=3.3",
+    "faker>=30.0",
+    "ruff>=0.7",
+    "pip-audit>=2.7",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.development"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"

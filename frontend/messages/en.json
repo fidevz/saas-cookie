@@ -1,0 +1,173 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "submit": "Submit",
+    "continue": "Continue",
+    "or": "or"
+  },
+  "nav": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "docs": "Docs",
+    "signIn": "Sign in",
+    "getStarted": "Get started",
+    "dashboard": "Dashboard",
+    "billing": "Billing",
+    "team": "Team",
+    "settings": "Settings",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Enter your credentials to sign in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up",
+      "continueWithGoogle": "Continue with Google"
+    },
+    "register": {
+      "title": "Create your account",
+      "subtitle": "Start your free trial today",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "continueWithGoogle": "Continue with Google",
+      "terms": "By signing up, you agree to our",
+      "termsLink": "Terms of Service",
+      "and": "and",
+      "privacyLink": "Privacy Policy"
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "subtitle": "Enter your email and we'll send you a reset link",
+      "email": "Email",
+      "submit": "Send reset link",
+      "backToLogin": "Back to sign in",
+      "success": "Check your email for a reset link"
+    },
+    "resetPassword": {
+      "title": "Set new password",
+      "subtitle": "Enter your new password below",
+      "password": "New password",
+      "submit": "Reset password",
+      "success": "Password reset successfully"
+    }
+  },
+  "landing": {
+    "hero": {
+      "badge": "Announcing our new features",
+      "title": "Build your SaaS\nfaster than ever",
+      "subtitle": "Everything you need to launch your product. Auth, billing, teams, and more — all ready to go.",
+      "cta": "Start for free",
+      "ctaSecondary": "View demo",
+      "trustedBy": "Trusted by teams at"
+    },
+    "features": {
+      "title": "Everything you need",
+      "subtitle": "A complete foundation to build your SaaS product",
+      "items": {
+        "auth": { "title": "Authentication", "description": "Email/password and Google OAuth out of the box" },
+        "billing": { "title": "Stripe Billing", "description": "Subscriptions, trials, and customer portal ready" },
+        "teams": { "title": "Team Management", "description": "Invite members, manage roles and permissions" },
+        "multitenancy": { "title": "Multi-tenancy", "description": "Isolated workspaces for each customer" },
+        "notifications": { "title": "Real-time Notifications", "description": "WebSocket-powered inbox" },
+        "i18n": { "title": "Internationalization", "description": "Built-in support for multiple languages" }
+      }
+    },
+    "pricing": {
+      "title": "Simple, transparent pricing",
+      "subtitle": "Choose the plan that fits your needs",
+      "monthly": "Monthly",
+      "annually": "Annually",
+      "save": "Save 20%",
+      "cta": "Get started",
+      "popular": "Most popular"
+    },
+    "cta": {
+      "title": "Ready to get started?",
+      "subtitle": "Join thousands of teams building with our platform",
+      "button": "Start for free"
+    }
+  },
+  "dashboard": {
+    "greeting": "Good {timeOfDay}, {name}!",
+    "welcome": "Welcome to {appName}",
+    "subtitle": "Here's an overview of your account"
+  },
+  "billing": {
+    "title": "Billing",
+    "currentPlan": "Current plan",
+    "manage": "Manage subscription",
+    "cancel": "Cancel subscription",
+    "cancelConfirm": {
+      "title": "Cancel subscription",
+      "subtitle": "We're sorry to see you go. Would you mind telling us why?",
+      "reasons": {
+        "tooExpensive": "Too expensive",
+        "missingFeatures": "Missing features I need",
+        "notUsing": "Not using it enough",
+        "foundAlternative": "Found a better alternative",
+        "other": "Other"
+      },
+      "confirm": "Cancel subscription",
+      "keep": "Keep subscription"
+    }
+  },
+  "team": {
+    "title": "Team",
+    "invite": "Invite member",
+    "inviteEmail": "Email address",
+    "inviteRole": "Role",
+    "roles": {
+      "admin": "Admin",
+      "member": "Member"
+    },
+    "sendInvite": "Send invite",
+    "inviteSent": "Invitation sent!",
+    "removeConfirm": "Are you sure you want to remove this member?",
+    "changeRole": "Change role"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "No notifications",
+    "welcome": {
+      "title": "Welcome to {appName}!",
+      "body": "We're glad you're here. Explore the dashboard to get started."
+    }
+  },
+  "legal": {
+    "tos": { "title": "Terms of Service", "lastUpdated": "Last updated: January 2025" },
+    "privacy": { "title": "Privacy Policy", "lastUpdated": "Last updated: January 2025" }
+  },
+  "support": {
+    "title": "Support",
+    "subtitle": "How can we help you?",
+    "name": "Your name",
+    "email": "Email address",
+    "subject": "Subject",
+    "message": "Message",
+    "submit": "Send message",
+    "success": "Message sent! We'll get back to you soon."
+  },
+  "invite": {
+    "title": "You've been invited",
+    "subtitle": "Join {tenantName} on {appName}",
+    "accept": "Accept invitation",
+    "expired": "This invitation has expired",
+    "alreadyMember": "You're already a member"
+  }
+}
