@@ -111,10 +111,13 @@ class LoginView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
 
-        # Handle first-login flag
-        if user.is_first_login:
-            user.is_first_login = False
-            user.save(update_fields=["is_first_login"])
+        # Fire the standard Django login signal so connected handlers
+        # (e.g. welcome notification) are triggered, and last_login is updated.
+        from django.contrib.auth.signals import user_logged_in
+        user_logged_in.send(sender=user.__class__, request=request, user=user)
+
+        # Refresh to pick up any changes made by signal handlers (e.g. is_first_login).
+        user.refresh_from_db()
 
         access, refresh = _tokens_for_user(user)
 
