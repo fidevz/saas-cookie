@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Plan } from "@/types";
+import { getPlans } from "@/lib/stripe";
 
 interface PricingSectionProps {
   plans?: Plan[];
@@ -63,14 +64,21 @@ const FALLBACK_PLANS = [
   },
 ];
 
-export function PricingSection({ plans }: PricingSectionProps) {
+export function PricingSection({ plans: initialPlans }: PricingSectionProps) {
   const t = useTranslations("landing.pricing");
   const [annual, setAnnual] = useState(false);
+  const [plans, setPlans] = useState<Plan[] | undefined>(initialPlans);
+
+  useEffect(() => {
+    if (!plans || plans.length === 0) {
+      getPlans().then(setPlans).catch(() => {});
+    }
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayPlans = plans && plans.length > 0 ? plans : FALLBACK_PLANS;
   const popularIndex = 1;
 
-  function getPrice(plan: (typeof FALLBACK_PLANS)[0]) {
+  function getPrice(plan: Pick<Plan, "amount" | "currency">) {
     const amount = annual ? Math.floor(plan.amount * 0.8) : plan.amount;
     return formatCurrency(amount, plan.currency);
   }

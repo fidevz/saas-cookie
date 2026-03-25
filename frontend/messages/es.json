@@ -161,7 +161,15 @@
     "subject": "Asunto",
     "message": "Mensaje",
     "submit": "Enviar mensaje",
-    "success": "¡Mensaje enviado! Te responderemos pronto."
+    "sending": "Enviando...",
+    "success": "¡Mensaje enviado! Te responderemos pronto.",
+    "received": "¡Mensaje recibido!",
+    "sendAnother": "Enviar otro mensaje",
+    "error": "Error al enviar el mensaje. Por favor intenta de nuevo.",
+    "namePlaceholder": "Ana García",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "subjectPlaceholder": "¿En qué podemos ayudarte?",
+    "messagePlaceholder": "Describe tu problema en detalle..."
   },
   "invite": {
     "title": "Has sido invitado",
@@ -169,5 +177,19 @@
     "accept": "Aceptar invitación",
     "expired": "Esta invitación ha expirado",
     "alreadyMember": "Ya eres miembro"
+  },
+  "errors": {
+    "notFound": {
+      "title": "Página no encontrada",
+      "description": "Lo sentimos, no pudimos encontrar la página que buscas.",
+      "goHome": "Ir al inicio",
+      "contactSupport": "Contactar soporte"
+    },
+    "generic": {
+      "title": "Algo salió mal",
+      "description": "Ocurrió un error inesperado. Por favor intenta de nuevo o contacta soporte si el problema persiste.",
+      "tryAgain": "Intentar de nuevo",
+      "goHome": "Ir al inicio"
+    }
   }
 }

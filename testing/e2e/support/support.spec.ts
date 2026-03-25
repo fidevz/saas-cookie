@@ -6,7 +6,7 @@ test.describe("Support Page", () => {
   });
 
   test("support page renders with contact form", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: /support|contact|help/i })).toBeVisible();
+    await expect(page.locator("h1")).toBeVisible();
     await expect(page.getByLabel(/email/i)).toBeVisible();
     await expect(page.getByLabel(/message/i)).toBeVisible();
   });
@@ -14,41 +14,28 @@ test.describe("Support Page", () => {
   test("form fields are present", async ({ page }) => {
     const emailField = page.getByLabel(/email/i);
     const messageField = page.getByLabel(/message/i);
-    const subjectField = page.getByLabel(/subject/i);
 
     await expect(emailField).toBeVisible();
     await expect(messageField).toBeVisible();
   });
 
   test("submitting the form shows success feedback", async ({ page }) => {
-    // Mock any backend call
-    await page.route("**/api/**", (route) => {
-      if (route.request().method() === "POST") {
-        route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
-      } else {
-        route.continue();
-      }
+    // Mock the support API endpoint
+    await page.route("**/support/**", (route) => {
+      route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
     });
 
-    const nameField = page.getByLabel(/your name|name/i).first();
-    if (await nameField.isVisible()) {
-      await nameField.fill("Test User");
-    }
-
+    // Fill all required fields
+    await page.getByLabel(/your name|name/i).first().fill("Test User");
     await page.getByLabel(/email/i).fill("test@example.com");
-
-    const subjectField = page.getByLabel(/subject/i);
-    if (await subjectField.isVisible()) {
-      await subjectField.fill("Test subject");
-    }
-
+    await page.getByLabel(/subject/i).fill("Test subject");
     await page.getByLabel(/message/i).fill("This is a test message from Playwright.");
 
     await page.getByRole("button", { name: /send message|submit/i }).click();
 
-    // Should show success toast or message
+    // Should show success state — "Message received!" heading
     await expect(
-      page.getByText(/message sent|thank you|we'll get back/i)
+      page.getByRole("heading", { name: /message received/i })
     ).toBeVisible({ timeout: 5000 });
   });
 

@@ -5,27 +5,17 @@ import { PricingSection } from "@/components/landing/pricing-section";
 import { Testimonials } from "@/components/landing/testimonials";
 import { CTA } from "@/components/landing/cta";
 import { Footer } from "@/components/layout/footer";
-import { getPlans } from "@/lib/stripe";
-import { Plan } from "@/types";
 
-async function fetchPlans(): Promise<Plan[]> {
-  try {
-    return await getPlans();
-  } catch {
-    return [];
-  }
-}
+export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
-  const plans = await fetchPlans();
-
+export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
         <Hero />
         <Features />
-        <PricingSection plans={plans} />
+        <PricingSection />
         <Testimonials />
         <CTA />
       </main>

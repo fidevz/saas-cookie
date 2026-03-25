@@ -32,14 +32,11 @@ export default function SupportPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post("/support/", form, { skipAuth: true }).catch(() => {
-        // Silently handle — support form works even without auth
-      });
+      await api.post("/support/", form, { skipAuth: true });
       setSent(true);
       toast.success(t("success"));
-    } catch {
-      // Already handled
-      setSent(true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("error"));
     } finally {
       setLoading(false);
     }
@@ -60,12 +57,12 @@ export default function SupportPage() {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
                 <CheckCircle className="h-7 w-7 text-emerald-600" />
               </div>
-              <h2 className="text-lg font-semibold">Message received!</h2>
+              <h2 className="text-lg font-semibold">{t("received")}</h2>
               <p className="text-sm text-muted-foreground max-w-xs">
                 {t("success")}
               </p>
               <Button variant="outline" onClick={() => setSent(false)}>
-                Send another message
+                {t("sendAnother")}
               </Button>
             </div>
           ) : (
@@ -77,7 +74,7 @@ export default function SupportPage() {
                     id="name"
                     name="name"
                     type="text"
-                    placeholder="Jane Smith"
+                    placeholder={t("namePlaceholder")}
                     value={form.name}
                     onChange={handleChange}
                     required
@@ -89,7 +86,7 @@ export default function SupportPage() {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder={t("emailPlaceholder")}
                     value={form.email}
                     onChange={handleChange}
                     required
@@ -103,7 +100,7 @@ export default function SupportPage() {
                   id="subject"
                   name="subject"
                   type="text"
-                  placeholder="How can we help?"
+                  placeholder={t("subjectPlaceholder")}
                   value={form.subject}
                   onChange={handleChange}
                   required
@@ -116,7 +113,7 @@ export default function SupportPage() {
                   id="message"
                   name="message"
                   rows={5}
-                  placeholder="Describe your issue in detail..."
+                  placeholder={t("messagePlaceholder")}
                   value={form.message}
                   onChange={handleChange}
                   required
@@ -125,7 +122,7 @@ export default function SupportPage() {
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Sending..." : t("submit")}
+                {loading ? t("sending") : t("submit")}
               </Button>
             </form>
           )}

@@ -104,6 +104,7 @@ class TestWelcomeNotificationViaLoginEndpoint:
 
     @override_settings(**_SETTINGS)
     def test_first_api_login_creates_notification(self, db):
+        from allauth.account.models import EmailAddress
         from rest_framework.test import APIClient
 
         user = User.objects.create_user(
@@ -111,6 +112,7 @@ class TestWelcomeNotificationViaLoginEndpoint:
             password="securepass123",
             first_name="Bob",
         )
+        EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
         assert user.is_first_login is True
 
         APIClient().post(
@@ -124,12 +126,14 @@ class TestWelcomeNotificationViaLoginEndpoint:
 
     @override_settings(**_SETTINGS)
     def test_second_api_login_does_not_duplicate_notification(self, db):
+        from allauth.account.models import EmailAddress
         from rest_framework.test import APIClient
 
         user = User.objects.create_user(
             email="apilogin2@example.com",
             password="securepass123",
         )
+        EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
         client = APIClient()
         credentials = {"email": "apilogin2@example.com", "password": "securepass123"}
         client.post("/api/v1/auth/login/", credentials)

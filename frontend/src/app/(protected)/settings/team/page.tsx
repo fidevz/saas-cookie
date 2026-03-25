@@ -30,8 +30,8 @@ export default function TeamPage() {
   useEffect(() => {
     if (!flags.TEAMS) return;
     api
-      .get<TenantMembership[]>("/tenants/members/")
-      .then(setMembers)
+      .get<{ results: TenantMembership[] } | TenantMembership[]>("/tenants/members/")
+      .then((data) => setMembers(Array.isArray(data) ? data : data.results))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [flags.TEAMS, setMembers]);

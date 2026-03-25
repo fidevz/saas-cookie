@@ -18,6 +18,7 @@ import {
 import { cn, getInitials } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 import { useFeatureStore } from "@/stores/feature-store";
+import { useTenantStore } from "@/stores/tenant-store";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth";
@@ -31,6 +32,8 @@ export function Sidebar() {
   const router = useRouter();
   const { user, logout: clearAuth } = useAuthStore();
   const { flags } = useFeatureStore();
+  const { currentUserRole } = useTenantStore();
+  const isAdmin = currentUserRole === "admin";
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -45,7 +48,7 @@ export function Sidebar() {
       href: "/billing",
       label: t("billing"),
       icon: CreditCard,
-      show: flags.BILLING,
+      show: flags.BILLING && isAdmin,
     },
     {
       href: "/settings/team",

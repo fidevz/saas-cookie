@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 
-export default function NotFound() {
+export default async function NotFound() {
+  const t = await getTranslations("errors.notFound");
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -11,16 +14,16 @@ export default function NotFound() {
         <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
           404
         </p>
-        <h1 className="mt-4 text-3xl font-bold tracking-tight">Page not found</h1>
+        <h1 className="mt-4 text-3xl font-bold tracking-tight">{t("title")}</h1>
         <p className="mt-3 text-base text-muted-foreground max-w-sm">
-          Sorry, we couldn&apos;t find the page you&apos;re looking for.
+          {t("description")}
         </p>
         <div className="mt-8 flex gap-3">
           <Button asChild>
-            <Link href="/">Go home</Link>
+            <Link href="/">{t("goHome")}</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/support">Contact support</Link>
+            <Link href="/support">{t("contactSupport")}</Link>
           </Button>
         </div>
       </main>

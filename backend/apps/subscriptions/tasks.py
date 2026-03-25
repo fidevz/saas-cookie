@@ -2,6 +2,7 @@
 Celery tasks for subscriptions.
 """
 import logging
+from datetime import timedelta
 
 from celery import shared_task
 from django.conf import settings
@@ -66,3 +67,26 @@ def send_trial_ending_email(self, subscription_id: int) -> None:
     except Exception as exc:
         logger.warning("Failed to send trial ending email: %s", exc)
         raise self.retry(exc=exc)
+
+
+@shared_task
+def check_trial_endings() -> None:
+    """Find subscriptions with trials ending in <= 3 days and dispatch warning emails."""
+    from apps.subscriptions.models import Subscription
+
+    now = timezone.now()
+    deadline = now + timedelta(days=3)
+
+    subscriptions = Subscription.objects.filter(
+        status=Subscription.Status.TRIALING,
+        trial_end__isnull=False,
+        trial_end__lte=deadline,
+        trial_end__gte=now,
+    ).values_list("pk", flat=True)
+
+    count = 0
+    for sub_id in subscriptions:
+        send_trial_ending_email.delay(sub_id)
+        count += 1
+
+    logger.info("Dispatched trial-ending emails for %d subscriptions", count)

@@ -7,15 +7,15 @@ test.describe("Landing Page", () => {
 
   test("renders hero section with CTA", async ({ page }) => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("link", { name: /get started|start for free/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /get started|start for free/i }).first()).toBeVisible();
   });
 
   test("renders features section", async ({ page }) => {
-    await expect(page.getByText(/everything you need/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /everything you need/i })).toBeVisible();
   });
 
   test("renders pricing section", async ({ page }) => {
-    await expect(page.getByText(/pricing/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /simple, transparent pricing/i })).toBeVisible();
   });
 
   test("navigation links work", async ({ page }) => {

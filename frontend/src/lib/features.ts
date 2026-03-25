@@ -3,13 +3,15 @@ import { FeatureFlags } from "@/types";
 
 export async function fetchFeatureFlags(): Promise<FeatureFlags> {
   try {
-    return await api.get<FeatureFlags>("/features/");
+    const data = await api.get<{ features: FeatureFlags }>("/features/");
+    return data.features;
   } catch {
     // Return safe defaults if feature flags can't be fetched
     return {
-      TEAMS: false,
+      TEAMS: true,
       BILLING: true,
-      NOTIFICATIONS: false,
+      NOTIFICATIONS: true,
+      REQUIRE_SUBSCRIPTION: false,
     };
   }
 }

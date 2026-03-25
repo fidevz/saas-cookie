@@ -16,8 +16,8 @@ test.describe("Forgot Password", () => {
     await page.getByLabel(/email/i).fill(email);
     await page.getByRole("button", { name: /send reset link/i }).click();
 
-    // Should show success message (email sent)
-    await expect(page.getByText(/check your email|reset link sent/i)).toBeVisible();
+    // Should show success message (email sent) — text: "Check your email for a reset link"
+    await expect(page.getByText(/check your email|reset link sent|check your inbox/i).first()).toBeVisible();
   });
 
   test("link back to login works", async ({ page }) => {

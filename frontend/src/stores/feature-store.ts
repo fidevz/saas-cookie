@@ -11,9 +11,10 @@ interface FeatureState {
 
 export const useFeatureStore = create<FeatureState>((set) => ({
   flags: {
-    TEAMS: false,
+    TEAMS: true,
     BILLING: true,
-    NOTIFICATIONS: false,
+    NOTIFICATIONS: true,
+    REQUIRE_SUBSCRIPTION: false,
   },
   isLoaded: false,
 

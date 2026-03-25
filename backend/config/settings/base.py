@@ -73,6 +73,7 @@ SITE_ID = 1
 # ---------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -80,6 +81,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "apps.tenants.middleware.TenantMiddleware",
+    "apps.subscriptions.middleware.SubscriptionPaywallMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
@@ -164,6 +166,7 @@ REST_FRAMEWORK = {
         "user": "1000/hour",
         "login": "5/minute",
         "register": "3/minute",
+        "resend_verification": "12/hour",
     },
 }
 
@@ -213,9 +216,16 @@ REST_AUTH = {
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
-ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_ADAPTER = "apps.authentication.adapter.FrontendAccountAdapter"
+
+# URL of the Next.js frontend — used to build email confirmation links
+FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:3000")
+
+# Destination address for support form submissions
+SUPPORT_EMAIL = config("SUPPORT_EMAIL", default="support@example.com")
 
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
@@ -249,6 +259,16 @@ CORS_ALLOWED_ORIGINS = config(
     default="http://localhost:3000,http://127.0.0.1:3000",
     cast=Csv(),
 )
+# Allow all tenant subdomains dynamically (e.g. acme.domain.com).
+# CORS_ALLOWED_ORIGINS only supports a fixed list, so we use a regex that
+# matches any subdomain of BASE_DOMAIN. This is required when using
+# credentials (cookies) across tenant subdomains.
+_base = BASE_DOMAIN.replace(".", r"\.")
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    rf"^https?://[a-z0-9-]+\.{_base}(:\d+)?$",
+    # Also allow localhost subdomains in development
+    r"^https?://[a-z0-9-]+\.localhost(:\d+)?$",
+]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -319,6 +339,7 @@ FEATURE_FLAGS = {
     "TEAMS": config("FEATURE_TEAMS", default=True, cast=bool),
     "BILLING": config("FEATURE_BILLING", default=True, cast=bool),
     "NOTIFICATIONS": config("FEATURE_NOTIFICATIONS", default=True, cast=bool),
+    "REQUIRE_SUBSCRIPTION": config("FEATURE_REQUIRE_SUBSCRIPTION", default=False, cast=bool),
 }
 
 # ---------------------------------------------------------------------------
@@ -338,11 +359,38 @@ LANGUAGES = [
 LOCALE_PATHS = [BASE_DIR / "locale"]
 
 # ---------------------------------------------------------------------------
-# Static / Media files
+# Static files
 # ---------------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# ---------------------------------------------------------------------------
+# Media / File storage — MinIO (S3-compatible) or local
+# ---------------------------------------------------------------------------
+USE_S3 = config("USE_S3", default=False, cast=bool)
+
+if USE_S3:
+    AWS_ACCESS_KEY_ID = config("MINIO_ROOT_USER", default="")
+    AWS_SECRET_ACCESS_KEY = config("MINIO_ROOT_PASSWORD", default="")
+    AWS_STORAGE_BUCKET_NAME = config("MINIO_BUCKET", default="media")
+    AWS_S3_ENDPOINT_URL = config("MINIO_ENDPOINT", default="http://minio:9000")
+    AWS_S3_CUSTOM_DOMAIN = config("MINIO_PUBLIC_URL", default="")
+    AWS_DEFAULT_ACL = "public-read"
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_QUERYSTRING_AUTH = False
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+
+    MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/"
+else:
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"

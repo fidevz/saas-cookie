@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { RegisterForm } from "@/components/auth/register-form";
 
@@ -20,12 +21,11 @@ export default function RegisterPage() {
             </div>
           </Link>
           <h1 className="mt-4 text-2xl font-bold tracking-tight">Create your account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Start your free trial today
-          </p>
         </div>
 
-        <RegisterForm />
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted" />}>
+          <RegisterForm />
+        </Suspense>
       </div>
     </div>
   );

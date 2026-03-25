@@ -23,7 +23,8 @@ test.describe("Login", () => {
     await page.getByLabel(/password/i).fill("wrongpassword");
     await page.getByRole("button", { name: /sign in/i }).click();
 
-    await expect(page.getByText(/invalid|incorrect|wrong/i)).toBeVisible();
+    // Backend returns "Unable to log in with provided credentials"
+    await expect(page.getByText(/unable to log in|credentials|invalid|incorrect|wrong|login failed/i)).toBeVisible();
     await expect(page).toHaveURL(/login/);
   });
 

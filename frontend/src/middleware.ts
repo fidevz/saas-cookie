@@ -1,26 +1,10 @@
-import createMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { routing } from "./i18n/routing";
 
-const intlMiddleware = createMiddleware(routing);
+const PUBLIC_PATHS = ["/", "/pricing", "/support"];
 
-const PUBLIC_PATHS = [
-  "/",
-  "/pricing",
-  "/support",
-];
+const PUBLIC_PATH_PREFIXES = ["/auth/", "/legal/", "/invite/"];
 
-const PUBLIC_PATH_PREFIXES = [
-  "/auth/",
-  "/legal/",
-  "/invite/",
-];
-
-const PROTECTED_PATH_PREFIXES = [
-  "/dashboard",
-  "/billing",
-  "/settings",
-];
+const PROTECTED_PATH_PREFIXES = ["/dashboard", "/billing", "/settings"];
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;
@@ -35,26 +19,41 @@ function isAuthPath(pathname: string): boolean {
   return pathname.startsWith("/auth/");
 }
 
-function getAuthTokenFromCookies(request: NextRequest): string | null {
-  // We check for a custom indicator cookie set by the client
-  // The actual httpOnly refresh token is handled transparently
-  const authIndicator = request.cookies.get("auth_session")?.value;
-  return authIndicator ?? null;
-}
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hostname = request.headers.get("host") || "";
+  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "localhost";
 
-  // Run next-intl middleware first
-  const intlResponse = intlMiddleware(request);
+  // Detect root domain (with or without port)
+  const rootHostnames = [
+    baseDomain,
+    `${baseDomain}:3000`,
+    "localhost",
+    "localhost:3000",
+  ];
+  const isRootDomain = rootHostnames.some((h) => hostname === h);
 
-  // Check auth state via cookie presence
-  const hasSession = getAuthTokenFromCookies(request);
+  const hasSession = request.cookies.has("auth_session");
+  const tenantSlug = request.cookies.get("tenant_slug")?.value;
+
+  // Authenticated user on root domain trying to access a protected route:
+  // redirect to their tenant subdomain.
+  if (isRootDomain && hasSession && tenantSlug && isProtectedPath(pathname)) {
+    const port = hostname.includes(":") ? `:${hostname.split(":")[1]}` : "";
+    const proto = request.nextUrl.protocol || "http:";
+    const redirectUrl = `${proto}//${tenantSlug}.${baseDomain}${port}${pathname}`;
+    return NextResponse.redirect(redirectUrl);
+  }
 
   // Redirect authenticated users away from auth pages
   if (isAuthPath(pathname) && hasSession) {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    return NextResponse.redirect(dashboardUrl);
+    // If we know the tenant slug, go straight to their subdomain
+    if (tenantSlug && isRootDomain) {
+      const port = hostname.includes(":") ? `:${hostname.split(":")[1]}` : "";
+      const proto = request.nextUrl.protocol || "http:";
+      return NextResponse.redirect(`${proto}//${tenantSlug}.${baseDomain}${port}/dashboard`);
+    }
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   // Redirect unauthenticated users away from protected pages
@@ -64,7 +63,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return intlResponse;
+  return NextResponse.next();
 }
 
 export const config = {

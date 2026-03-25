@@ -3,11 +3,13 @@ import { User, RegisterData } from "@/types";
 
 export interface LoginResponse {
   access: string;
+  tenant_slug: string | null;
   user: User;
 }
 
 export interface RegisterResponse {
   access: string;
+  tenant_slug: string;
   user: User;
 }
 
@@ -42,13 +44,27 @@ export async function getGoogleAuthUrl(): Promise<string> {
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
-  await api.post<void>("/auth/password/reset/", { email }, { skipAuth: true });
+  await api.post<void>("/auth/password-reset/", { email }, { skipAuth: true });
 }
 
 export async function confirmPasswordReset(token: string, password: string): Promise<void> {
-  await api.post<void>("/auth/password/reset/confirm/", { token, password }, { skipAuth: true });
+  await api.post<void>("/auth/password-reset/confirm/", { token, password }, { skipAuth: true });
 }
 
 export async function getProfile(): Promise<User> {
-  return api.get<User>("/auth/me/");
+  return api.get<User>("/users/me/");
+}
+
+export async function resendVerificationEmail(email: string): Promise<void> {
+  await api.post<void>("/auth/resend-verification/", { email }, { skipAuth: true });
+}
+
+export async function verifyEmail(key: string): Promise<void> {
+  await api.post<void>("/auth/verify-email/", { key }, { skipAuth: true });
+}
+
+export async function checkSlug(slug: string): Promise<{ available: boolean; suggestion?: string; error?: string }> {
+  return api.get<{ available: boolean; suggestion?: string; error?: string }>(
+    `/auth/check-slug/?slug=${encodeURIComponent(slug)}`
+  );
 }

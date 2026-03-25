@@ -1,6 +1,6 @@
 """
 Authentication views: register, login, logout, token refresh, Google OAuth,
-password reset.
+password reset, email verification.
 """
 import logging
 
@@ -23,7 +23,7 @@ from apps.authentication.serializers import (
     PasswordResetRequestSerializer,
     RegisterSerializer,
 )
-from utils.throttling import LoginThrottle, RegisterThrottle
+from utils.throttling import LoginThrottle, RegisterThrottle, ResendVerificationThrottle
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -80,13 +80,14 @@ class RegisterView(APIView):
     def post(self, request: Request) -> Response:
         serializer = RegisterSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()
+        user, tenant = serializer.save()
 
         access, refresh = _tokens_for_user(user)
 
         response = Response(
             {
                 "access": access,
+                "tenant_slug": tenant.slug,
                 "user": {
                     "id": user.id,
                     "email": user.email,
@@ -111,6 +112,18 @@ class LoginView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
 
+        # Check email verification before issuing tokens.
+        # Google OAuth users are always verified (allauth marks them automatically).
+        from allauth.account.models import EmailAddress
+        if not EmailAddress.objects.filter(user=user, verified=True).exists():
+            return Response(
+                {
+                    "code": "email_not_verified",
+                    "detail": "Please verify your email address before signing in.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         # Fire the standard Django login signal so connected handlers
         # (e.g. welcome notification) are triggered, and last_login is updated.
         from django.contrib.auth.signals import user_logged_in
@@ -119,11 +132,21 @@ class LoginView(APIView):
         # Refresh to pick up any changes made by signal handlers (e.g. is_first_login).
         user.refresh_from_db()
 
+        # Resolve tenant for this user (first admin membership)
+        from apps.tenants.models import TenantMembership
+        membership = (
+            TenantMembership.objects.select_related("tenant")
+            .filter(user=user)
+            .first()
+        )
+        tenant_slug = membership.tenant.slug if membership else None
+
         access, refresh = _tokens_for_user(user)
 
         response = Response(
             {
                 "access": access,
+                "tenant_slug": tenant_slug,
                 "user": {
                     "id": user.id,
                     "email": user.email,
@@ -184,15 +207,144 @@ class TokenRefreshCookieView(APIView):
         return response
 
 
-class GoogleLoginView(APIView):
-    """POST /api/v1/auth/google/ — exchange Google OAuth code for JWT tokens.
+class ResendVerificationView(APIView):
+    """POST /api/v1/auth/resend-verification/ — resend email confirmation link."""
 
-    Delegates to dj-rest-auth / allauth under the hood.  The client should
-    send ``{"code": "<auth_code>"}`` (server-side flow) or
-    ``{"access_token": "<token>"}`` (client-side flow).
+    permission_classes = [AllowAny]
+    throttle_classes = [ResendVerificationThrottle]
+
+    def post(self, request: Request) -> Response:
+        email = request.data.get("email", "").strip().lower()
+
+        if email:
+            from allauth.account.models import EmailAddress
+
+            ea = EmailAddress.objects.filter(email=email, verified=False).first()
+            if ea:
+                try:
+                    ea.send_confirmation(request, signup=False)
+                except Exception:
+                    logger.exception("Failed to resend verification email to %s", email)
+
+        # Always 200 — never reveal whether an email exists
+        return Response(
+            {"detail": "If that email exists and is unverified, a new confirmation link was sent."}
+        )
+
+
+class VerifyEmailView(APIView):
+    """POST /api/v1/auth/verify-email/ — confirm email address from link key."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request) -> Response:
+        key = request.data.get("key", "").strip()
+        if not key:
+            return Response({"detail": "Key is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from allauth.account.models import EmailConfirmationHMAC, EmailAddress
+
+        confirmation = EmailConfirmationHMAC.from_key(key)
+        if not confirmation:
+            # Fallback to DB-stored confirmation
+            try:
+                from allauth.account.models import EmailConfirmation
+                confirmation = EmailConfirmation.objects.get(key=key)
+            except Exception:
+                confirmation = None
+
+        if not confirmation:
+            return Response(
+                {"detail": "Invalid or expired confirmation link."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            email_address = confirmation.confirm(request)
+        except Exception:
+            return Response(
+                {"detail": "Invalid or expired confirmation link."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not email_address:
+            return Response(
+                {"detail": "Invalid or expired confirmation link."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({"detail": "Email verified successfully."})
+
+
+class CheckSlugView(APIView):
+    """GET /api/v1/auth/check-slug/?slug=acme — check workspace slug availability."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request) -> Response:
+        from apps.authentication.serializers import RESERVED_SLUGS
+        from apps.tenants.models import Tenant
+        import re
+
+        slug = request.query_params.get("slug", "").strip().lower()
+
+        if not slug:
+            return Response({"available": False, "error": "slug is required"}, status=400)
+
+        # Validate format
+        pattern = re.compile(r"^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$")
+        if not pattern.match(slug):
+            return Response({
+                "available": False,
+                "error": (
+                    "Slug must be 3–50 characters: lowercase letters, numbers, and hyphens. "
+                    "Cannot start or end with a hyphen."
+                ),
+            })
+
+        if slug in RESERVED_SLUGS:
+            suggestion = f"{slug}-app"
+            return Response({"available": False, "suggestion": suggestion})
+
+        if Tenant.objects.filter(slug=slug).exists():
+            # Find next available suggestion
+            counter = 1
+            while Tenant.objects.filter(slug=f"{slug}-{counter}").exists():
+                counter += 1
+            return Response({"available": False, "suggestion": f"{slug}-{counter}"})
+
+        return Response({"available": True})
+
+
+class GoogleLoginView(APIView):
+    """GET  /api/v1/auth/google/ — return Google OAuth authorization URL.
+    POST /api/v1/auth/google/ — exchange Google OAuth code for JWT tokens.
+
+    The client-side flow:
+      1. GET  → receive {"url": "https://accounts.google.com/..."}
+      2. Redirect user to that URL.
+      3. Google redirects to /api/v1/auth/google/callback/ (server handles exchange).
     """
 
     permission_classes = [AllowAny]
+
+    def get(self, request: Request) -> Response:
+        from urllib.parse import urlencode
+        from django.urls import reverse
+
+        google_config = settings.SOCIALACCOUNT_PROVIDERS.get("google", {})
+        client_id = google_config.get("APP", {}).get("client_id", "")
+        callback_url = request.build_absolute_uri(reverse("google-callback"))
+
+        params = {
+            "client_id": client_id,
+            "redirect_uri": callback_url,
+            "response_type": "code",
+            "scope": "openid profile email",
+            "access_type": "online",
+        }
+        url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+        return Response({"url": url})
 
     def post(self, request: Request) -> Response:
         from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -219,6 +371,87 @@ class GoogleLoginView(APIView):
         return inner_response
 
 
+class GoogleCallbackView(APIView):
+    """GET /api/v1/auth/google/callback/ — handle OAuth redirect from Google.
+
+    Google redirects here after the user grants permission.  This view
+    exchanges the authorization code for an access token, completes the
+    allauth social login (creating the user if needed), issues a JWT pair,
+    and redirects the browser to the frontend callback page with the access
+    token as a query parameter.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request):
+        import json as json_mod
+        import urllib.request
+        from urllib.parse import urlencode
+        from django.http import HttpResponseRedirect
+        from django.urls import reverse
+        from allauth.socialaccount.helpers import complete_social_login
+        from allauth.socialaccount.models import SocialToken
+        from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+
+        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+        code = request.query_params.get("code")
+        error = request.query_params.get("error")
+
+        if error or not code:
+            return HttpResponseRedirect(f"{frontend_url}/auth/callback?error=oauth_failed")
+
+        try:
+            google_config = settings.SOCIALACCOUNT_PROVIDERS.get("google", {})
+            app_config = google_config.get("APP", {})
+            client_id = app_config.get("client_id", "")
+            client_secret = app_config.get("secret", "")
+            callback_url = request.build_absolute_uri(reverse("google-callback"))
+
+            # Exchange authorization code for an access token directly with Google.
+            token_data = urlencode({
+                "code": code,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": callback_url,
+                "grant_type": "authorization_code",
+            }).encode()
+            token_req = urllib.request.Request(
+                "https://oauth2.googleapis.com/token",
+                data=token_data,
+                method="POST",
+            )
+            with urllib.request.urlopen(token_req) as resp:
+                token_response = json_mod.loads(resp.read())
+
+            access_token_str = token_response.get("access_token")
+            if not access_token_str:
+                raise ValueError("No access_token in Google token response")
+
+            # Use allauth's adapter to fetch the Google user profile and
+            # complete the social login (creates the user + social account if new).
+            adapter = GoogleOAuth2Adapter(request._request)
+            app = adapter.get_app(request._request)
+            token_obj = SocialToken(app=app, token=access_token_str)
+            social_login = adapter.complete_login(
+                request._request, app, token_obj, response=token_response
+            )
+            social_login.token = token_obj
+            complete_social_login(request._request, social_login)
+
+            user = social_login.account.user
+            if not user or not user.pk:
+                raise ValueError("OAuth login did not return a valid user")
+
+            access, refresh = _tokens_for_user(user)
+            response = HttpResponseRedirect(f"{frontend_url}/auth/callback?access={access}")
+            _set_refresh_cookie(response, refresh)
+            return response
+
+        except Exception as exc:
+            logger.warning("Google OAuth callback error: %s", exc)
+            return HttpResponseRedirect(f"{frontend_url}/auth/callback?error=oauth_failed")
+
+
 class PasswordResetRequestView(APIView):
     """POST /api/v1/auth/password-reset/ — send password-reset email."""
 
@@ -236,9 +469,14 @@ class PasswordResetRequestView(APIView):
             # Return 200 even if email not found to prevent enumeration
             return Response({"detail": "Password reset email sent if account exists."})
 
+        import html as html_lib
+
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        reset_url = f"{request.scheme}://{request.get_host()}/reset-password/{uid}/{token}/"
+        combined = f"{uid}-{token}"
+        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+        reset_url = f"{frontend_url}/auth/reset-password?token={combined}"
+        escaped_url = html_lib.escape(reset_url)
 
         from utils.email import send_email
 
@@ -247,7 +485,7 @@ class PasswordResetRequestView(APIView):
             subject="Password Reset Request",
             html_body=(
                 f"<p>Click the link below to reset your password:</p>"
-                f"<p><a href='{reset_url}'>{reset_url}</a></p>"
+                f"<p><a href='{escaped_url}'>{escaped_url}</a></p>"
                 f"<p>This link expires in 1 hour.</p>"
             ),
         )

@@ -79,6 +79,7 @@ class ApiClient {
       ...fetchOptions,
       headers,
       credentials: "include",
+      signal: fetchOptions.signal,
     });
 
     // Handle 401 with token refresh

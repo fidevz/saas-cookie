@@ -56,7 +56,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         "type" in data &&
         (data as { type: string }).type === "notification"
       ) {
-        const payload = (data as { payload: Notification }).payload;
+        const payload = (data as unknown as { payload: Notification }).payload;
         get().addNotification(payload);
       }
     });

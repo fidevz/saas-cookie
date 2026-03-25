@@ -37,3 +37,7 @@ class FeatureFlags:
     @classmethod
     def notifications_enabled(cls) -> bool:
         return cls.get_feature("NOTIFICATIONS")
+
+    @classmethod
+    def require_subscription(cls) -> bool:
+        return cls.get_feature("REQUIRE_SUBSCRIPTION")

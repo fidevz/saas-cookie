@@ -2,13 +2,22 @@
 Integration tests for authentication endpoints.
 """
 import pytest
+from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
+
+REGISTER_DATA = {
+    "email": "new@example.com",
+    "password": "securepass123",
+    "first_name": "New",
+    "last_name": "User",
+    "company_name": "New Corp",
+    "slug": "new-corp",
+}
 
 
 @pytest.fixture
@@ -18,12 +27,14 @@ def client():
 
 @pytest.fixture
 def existing_user(db):
-    return User.objects.create_user(
+    user = User.objects.create_user(
         email="existing@example.com",
         password="goodpassword123",
         first_name="Existing",
         last_name="User",
     )
+    EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+    return user
 
 
 @pytest.mark.django_db
@@ -31,10 +42,7 @@ class TestRegister:
     url = "/api/v1/auth/register/"
 
     def test_register_creates_user(self, client):
-        response = client.post(
-            self.url,
-            {"email": "new@example.com", "password": "securepass123", "first_name": "New"},
-        )
+        response = client.post(self.url, REGISTER_DATA)
         assert response.status_code == status.HTTP_201_CREATED
         assert "access" in response.data
         assert User.objects.filter(email="new@example.com").exists()
@@ -42,7 +50,7 @@ class TestRegister:
     def test_register_sets_refresh_cookie(self, client):
         response = client.post(
             self.url,
-            {"email": "cookie@example.com", "password": "securepass123"},
+            {**REGISTER_DATA, "email": "cookie@example.com", "slug": "cookie-corp"},
         )
         assert response.status_code == status.HTTP_201_CREATED
         assert "refresh_token" in response.cookies
@@ -50,16 +58,19 @@ class TestRegister:
     def test_register_duplicate_email(self, client, existing_user):
         response = client.post(
             self.url,
-            {"email": existing_user.email, "password": "otherpass123"},
+            {**REGISTER_DATA, "email": existing_user.email, "slug": "other-slug"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_register_weak_password(self, client):
-        response = client.post(self.url, {"email": "weak@example.com", "password": "123"})
+        response = client.post(
+            self.url,
+            {**REGISTER_DATA, "email": "weak@example.com", "slug": "weak-corp", "password": "123"},
+        )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_register_missing_email(self, client):
-        response = client.post(self.url, {"password": "goodpassword123"})
+        response = client.post(self.url, {"password": "goodpassword123", "company_name": "X", "slug": "x-co"})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_register_creates_tenant(self, client):
@@ -67,7 +78,7 @@ class TestRegister:
 
         client.post(
             self.url,
-            {"email": "tenant@example.com", "password": "securepass123"},
+            {**REGISTER_DATA, "email": "tenant@example.com", "slug": "tenant-corp"},
         )
         assert Tenant.objects.filter(owner__email="tenant@example.com").exists()
 
@@ -76,7 +87,7 @@ class TestRegister:
 
         client.post(
             self.url,
-            {"email": "member@example.com", "password": "securepass123"},
+            {**REGISTER_DATA, "email": "member@example.com", "slug": "member-corp"},
         )
         user = User.objects.get(email="member@example.com")
         membership = TenantMembership.objects.filter(user=user).first()

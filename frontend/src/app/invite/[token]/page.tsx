@@ -30,7 +30,7 @@ export default function InvitePage() {
 
   useEffect(() => {
     api
-      .get<Invitation>(`/tenants/invitations/${token}/`)
+      .get<Invitation>(`/teams/invitations/${token}/`)
       .then(setInvitation)
       .catch((err: Error) => setFetchError(err.message))
       .finally(() => setFetchLoading(false));
@@ -43,7 +43,7 @@ export default function InvitePage() {
     }
     setAccepting(true);
     try {
-      await api.post(`/tenants/invitations/${token}/accept/`, {});
+      await api.post(`/teams/accept-invite/${token}/`, {});
       toast.success("You've joined the team!");
       router.push("/dashboard");
     } catch (err) {

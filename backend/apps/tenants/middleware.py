@@ -46,7 +46,10 @@ class TenantMiddleware:
             if pattern.match(path):
                 return None
 
-        host = request.get_host().split(":")[0].lower()  # strip port
+        # When requests arrive via a Next.js proxy rewrite, the original
+        # browser host is forwarded in X-Forwarded-Host rather than Host.
+        forwarded = request.META.get("HTTP_X_FORWARDED_HOST", "")
+        host = (forwarded or request.get_host()).split(":")[0].lower()
         base_domain = getattr(settings, "BASE_DOMAIN", "localhost").lower()
 
         slug = self._extract_slug(host, base_domain)

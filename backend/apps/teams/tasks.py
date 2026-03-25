@@ -24,7 +24,8 @@ def send_invitation_email(self, invitation_id: int) -> None:
         return
 
     app_name = settings.APP_NAME
-    accept_url = f"https://{settings.BASE_DOMAIN}/accept-invite/{invitation.token}/"
+    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+    accept_url = f"{frontend_url}/invite/{invitation.token}"
     invited_by_name = (
         invitation.invited_by.full_name if invitation.invited_by else app_name
     )

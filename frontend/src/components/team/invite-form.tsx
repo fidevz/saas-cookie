@@ -26,7 +26,7 @@ export function InviteForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post<Invitation>("/tenants/invitations/", { email, role });
+      await api.post<Invitation>("/teams/invitations/", { email, role });
       toast.success(t("inviteSent"));
       setEmail("");
       setRole("member");

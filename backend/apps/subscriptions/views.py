@@ -38,6 +38,25 @@ class ListPlansView(APIView):
         return Response(PlanSerializer(plans, many=True).data)
 
 
+class CurrentSubscriptionView(APIView):
+    """GET /api/v1/subscriptions/current/ — return the tenant's current subscription."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        _require_billing()
+        tenant = getattr(request, "tenant", None)
+        if not tenant:
+            raise NotFound("No tenant context.")
+
+        try:
+            subscription = Subscription.objects.select_related("plan").get(tenant=tenant)
+        except Subscription.DoesNotExist:
+            raise NotFound("No subscription found.")
+
+        return Response(SubscriptionSerializer(subscription).data)
+
+
 class CreateCheckoutSessionView(APIView):
     """POST /api/v1/subscriptions/checkout/ — create a Stripe Checkout session."""
 
@@ -49,14 +68,17 @@ class CreateCheckoutSessionView(APIView):
         if not tenant:
             raise NotFound("No tenant context.")
 
-        price_id = request.data.get("price_id")
-        if not price_id:
-            raise ValidationError({"price_id": "This field is required."})
+        plan_id = request.data.get("plan_id")
+        if not plan_id:
+            raise ValidationError({"plan_id": "This field is required."})
 
         try:
-            plan = Plan.objects.get(stripe_price_id=price_id, is_active=True)
+            plan = Plan.objects.get(pk=plan_id, is_active=True)
         except Plan.DoesNotExist:
-            raise ValidationError({"price_id": "Invalid plan."})
+            raise ValidationError({"plan_id": "Invalid plan."})
+
+        if not plan.stripe_price_id:
+            raise ValidationError({"plan_id": "Plan has no Stripe price configured."})
 
         success_url = request.data.get(
             "success_url", f"https://{settings.BASE_DOMAIN}/billing/success"
@@ -72,7 +94,7 @@ class CreateCheckoutSessionView(APIView):
         session_params = {
             "mode": "subscription",
             "payment_method_types": ["card"],
-            "line_items": [{"price": price_id, "quantity": 1}],
+            "line_items": [{"price": plan.stripe_price_id, "quantity": 1}],
             "success_url": success_url + "?session_id={CHECKOUT_SESSION_ID}",
             "cancel_url": cancel_url,
             "client_reference_id": str(tenant.pk),
@@ -93,7 +115,7 @@ class CreateCheckoutSessionView(APIView):
             logger.error("Stripe checkout error: %s", exc)
             raise ValidationError({"detail": str(exc)})
 
-        return Response({"checkout_url": session.url, "session_id": session.id})
+        return Response({"url": session.url, "session_id": session.id})
 
 
 class CustomerPortalView(APIView):
@@ -128,7 +150,7 @@ class CustomerPortalView(APIView):
             logger.error("Stripe portal error: %s", exc)
             raise ValidationError({"detail": str(exc)})
 
-        return Response({"portal_url": portal_session.url})
+        return Response({"url": portal_session.url})
 
 
 class CancelSubscriptionView(APIView):

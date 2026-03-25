@@ -7,7 +7,10 @@ import { Topbar } from "@/components/layout/topbar";
 import { useAuthStore } from "@/stores/auth-store";
 import { useFeatureStore } from "@/stores/feature-store";
 import { useNotificationStore } from "@/stores/notification-store";
+import { useTenantStore } from "@/stores/tenant-store";
 import { fetchFeatureFlags } from "@/lib/features";
+import { api } from "@/lib/api";
+import { TenantMembership } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProtectedLayout({
@@ -16,9 +19,10 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, isLoading, accessToken } = useAuthStore();
+  const { isAuthenticated, isLoading, accessToken, user } = useAuthStore();
   const { setFlags, isLoaded } = useFeatureStore();
   const { connectWebSocket, setNotifications } = useNotificationStore();
+  const { setCurrentUserRole } = useTenantStore();
 
   // Auth guard
   useEffect(() => {
@@ -33,6 +37,19 @@ export default function ProtectedLayout({
       fetchFeatureFlags().then(setFlags);
     }
   }, [isAuthenticated, isLoaded, setFlags]);
+
+  // Load current user's tenant role
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    api
+      .get<{ results: TenantMembership[] } | TenantMembership[]>("/tenants/members/")
+      .then((data) => {
+        const members = Array.isArray(data) ? data : data.results;
+        const mine = members.find((m) => m.user.id === user.id);
+        setCurrentUserRole((mine?.role as "admin" | "member") ?? "member");
+      })
+      .catch(() => setCurrentUserRole("member"));
+  }, [isAuthenticated, user, setCurrentUserRole]);
 
   // Initialize WebSocket for notifications
   useEffect(() => {

@@ -4,6 +4,7 @@ export interface User {
   first_name: string;
   last_name: string;
   is_first_login: boolean;
+  tenant_slug: string | null;
 }
 
 export interface Tenant {
@@ -63,6 +64,7 @@ export interface FeatureFlags {
   TEAMS: boolean;
   BILLING: boolean;
   NOTIFICATIONS: boolean;
+  REQUIRE_SUBSCRIPTION: boolean;
 }
 
 export interface ApiError {
@@ -71,6 +73,8 @@ export interface ApiError {
 }
 
 export interface RegisterData {
+  company_name: string;
+  slug: string;
   email: string;
   password: string;
   first_name: string;

@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,12 +11,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SubscriptionStatus } from "@/components/billing/subscription-status";
 import { useSubscription } from "@/hooks/use-subscription";
 import { openCustomerPortal } from "@/lib/stripe";
+import { useTenantStore } from "@/stores/tenant-store";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function BillingPage() {
   const t = useTranslations("billing");
+  const router = useRouter();
   const { subscription, isLoading, isActive, isCancelling } = useSubscription();
+  const { currentUserRole } = useTenantStore();
+
+  useEffect(() => {
+    if (currentUserRole && currentUserRole !== "admin") {
+      router.replace("/dashboard");
+    }
+  }, [currentUserRole, router]);
 
   const handleManage = async () => {
     try {

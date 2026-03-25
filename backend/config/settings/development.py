@@ -10,8 +10,12 @@ ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1", ".localhost"]
 # Allow all origins in development
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Use console email so we don't need Resend credentials locally
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# Email via Mailhog (SMTP local) — UI at http://localhost:8025
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "localhost"
+EMAIL_PORT = 1025
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = False
 
 # Use in-memory channel layer so Redis isn't required in dev
 CHANNEL_LAYERS = {
@@ -42,6 +46,22 @@ DATABASES = {
         "PORT": "5432",
     }
 }
+
+# Relax throttling in development (high limits for testing)
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,  # noqa: F405
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "10000/hour",
+        "user": "100000/hour",
+        "login": "1000/minute",
+        "register": "1000/minute",
+        "resend_verification": "1000/hour",
+    },
+}
+
+# Run Celery tasks synchronously in development (no broker needed)
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
 
 # django-extensions shell_plus extras
 SHELL_PLUS_PRINT_SQL = False

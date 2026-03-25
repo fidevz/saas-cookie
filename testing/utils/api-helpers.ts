@@ -10,7 +10,7 @@ export interface TestUser {
   email: string;
   first_name: string;
   last_name: string;
-  access_token: string;
+  tenant_slug?: string;
 }
 
 export interface TestTenant {
@@ -27,7 +27,10 @@ export async function createTestUser(data: {
   password: string;
   first_name?: string;
   last_name?: string;
-}): Promise<TestUser & { access_token: string }> {
+  company_name?: string;
+  slug?: string;
+}): Promise<{ access: string; tenant_slug: string; user: TestUser }> {
+  const uniqueSuffix = Date.now();
   const response = await fetch(`${API_URL}/auth/register/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -36,6 +39,8 @@ export async function createTestUser(data: {
       password: data.password,
       first_name: data.first_name || "Test",
       last_name: data.last_name || "User",
+      company_name: data.company_name || `Test Company ${uniqueSuffix}`,
+      slug: data.slug || `test-co-${uniqueSuffix}`,
     }),
   });
 
@@ -73,7 +78,7 @@ export async function loginTestUser(
  */
 export async function getProfile(
   accessToken: string
-): Promise<TestUser> {
+): Promise<TestUser & Record<string, unknown>> {
   const response = await fetch(`${API_URL}/users/me/`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });

@@ -14,3 +14,9 @@ class RegisterThrottle(AnonRateThrottle):
     """3 registration attempts per minute per IP."""
 
     scope = "register"
+
+
+class ResendVerificationThrottle(AnonRateThrottle):
+    """1 resend request per 5 minutes per IP."""
+
+    scope = "resend_verification"

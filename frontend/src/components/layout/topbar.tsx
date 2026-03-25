@@ -53,7 +53,7 @@ export function Topbar({ title }: TopbarProps) {
         {/* User dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <button aria-label="User menu" className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-slate-200 text-slate-700 text-xs">
                   {user

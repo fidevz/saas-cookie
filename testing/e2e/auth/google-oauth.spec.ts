@@ -4,15 +4,7 @@ test.describe("Google OAuth", () => {
   test("Google button on login page redirects to Google", async ({ page }) => {
     await page.goto("/auth/login");
 
-    // Intercept the navigation to verify it goes to Google
-    let googleRedirectUrl = "";
-    page.on("request", (request) => {
-      if (request.url().includes("accounts.google.com")) {
-        googleRedirectUrl = request.url();
-      }
-    });
-
-    // Mock the Google Auth URL endpoint
+    // Mock the Google Auth URL endpoint to return a Google URL
     await page.route("**/api/v1/auth/google/**", (route) => {
       route.fulfill({
         status: 200,
@@ -21,11 +13,25 @@ test.describe("Google OAuth", () => {
       });
     });
 
+    // Block the actual Google navigation so we stay on the test environment
+    let navigationAttempted = false;
+    await page.route("https://accounts.google.com/**", (route) => {
+      navigationAttempted = true;
+      route.abort();
+    });
+
     await page.getByRole("button", { name: /continue with google/i }).click();
 
-    // Verify the page attempts to navigate to Google OAuth
-    // (We intercept before the actual redirect to avoid leaving the test environment)
-    await expect(page.getByRole("button", { name: /continue with google/i })).toBeVisible();
+    // Wait until Google navigation is attempted (or timeout) — deterministic wait
+    await page.waitForEvent("requestfailed", {
+      predicate: (req) => req.url().includes("accounts.google.com"),
+      timeout: 5000,
+    }).catch(() => {
+      // May have already fired before waitForEvent was registered
+    });
+
+    // Verify that Google OAuth redirect was attempted
+    expect(navigationAttempted).toBeTruthy();
   });
 
   test("Google button on register page is visible", async ({ page }) => {

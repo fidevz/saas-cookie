@@ -89,6 +89,16 @@ class Command(BaseCommand):
             self.stdout.write(f"  Created user: {TEST_USER_EMAIL} / {TEST_USER_PASSWORD}")
         else:
             self.stdout.write(f"  User already exists: {TEST_USER_EMAIL}")
+
+        # Ensure email is verified so the test user can log in when
+        # ACCOUNT_EMAIL_VERIFICATION = "mandatory" is set.
+        from allauth.account.models import EmailAddress
+        EmailAddress.objects.get_or_create(
+            user=user,
+            email=user.email,
+            defaults={"primary": True, "verified": True},
+        )
+
         return user
 
     def _seed_tenant(self, user):
