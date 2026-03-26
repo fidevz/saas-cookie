@@ -157,7 +157,18 @@ DIRS_TO_COPY=("backend" "frontend" "testing" ".github" "docs" "ops")
 
 for dir in "${DIRS_TO_COPY[@]}"; do
   if [[ -d "${SCRIPT_DIR}/${dir}" ]]; then
-    cp -r "${SCRIPT_DIR}/${dir}" "${OUTPUT_DIR}/"
+    rsync -a \
+      --exclude='.venv' \
+      --exclude='__pycache__' \
+      --exclude='*.pyc' \
+      --exclude='.pytest_cache' \
+      --exclude='.ruff_cache' \
+      --exclude='htmlcov' \
+      --exclude='.coverage' \
+      --exclude='node_modules' \
+      --exclude='.next' \
+      --exclude='*.tsbuildinfo' \
+      "${SCRIPT_DIR}/${dir}/" "${OUTPUT_DIR}/${dir}/"
     print_info "Copied ${dir}/"
   else
     print_info "Skipping ${dir}/ (not found)"
