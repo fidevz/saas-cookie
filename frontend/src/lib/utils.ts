@@ -5,12 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: string) {
-  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(date));
+export function formatDate(date: string, locale: string = "en-US") {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(date));
 }
 
-export function formatCurrency(amount: number, currency: string = "usd") {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount / 100);
+export function formatCurrency(amount: number, currency: string = "usd", locale: string = "en-US") {
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(amount / 100);
 }
 
 export function getTimeOfDay(): "morning" | "afternoon" | "evening" {
@@ -20,20 +20,21 @@ export function getTimeOfDay(): "morning" | "afternoon" | "evening" {
   return "evening";
 }
 
-export function timeAgo(date: string): string {
+export function timeAgo(date: string, locale: string = "en"): string {
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   const now = new Date();
   const past = new Date(date);
-  const diffMs = now.getTime() - past.getTime();
-  const diffSecs = Math.floor(diffMs / 1000);
-  const diffMins = Math.floor(diffSecs / 60);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
+  const diffMs = past.getTime() - now.getTime();
+  const diffSecs = Math.round(diffMs / 1000);
+  const diffMins = Math.round(diffSecs / 60);
+  const diffHours = Math.round(diffMins / 60);
+  const diffDays = Math.round(diffHours / 24);
 
-  if (diffSecs < 60) return "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return formatDate(date);
+  if (Math.abs(diffSecs) < 60) return rtf.format(diffSecs, "second");
+  if (Math.abs(diffMins) < 60) return rtf.format(diffMins, "minute");
+  if (Math.abs(diffHours) < 24) return rtf.format(diffHours, "hour");
+  if (Math.abs(diffDays) < 7) return rtf.format(diffDays, "day");
+  return formatDate(date, locale);
 }
 
 export function getInitials(firstName: string, lastName: string): string {

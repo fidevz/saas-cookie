@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
@@ -18,6 +19,8 @@ interface PlanCardProps {
 }
 
 export function PlanCard({ plan, isCurrentPlan, isPopular, onUpgrade }: PlanCardProps) {
+  const t = useTranslations("billing.planCard");
+  const locale = useLocale();
   const [loading, setLoading] = useState(false);
 
   const handleSelect = async () => {
@@ -30,7 +33,7 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onUpgrade }: PlanCard
         await createCheckoutSession(plan.id);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to start checkout");
+      toast.error(err instanceof Error ? err.message : t("failedCheckout"));
       setLoading(false);
     }
   };
@@ -41,7 +44,7 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onUpgrade }: PlanCard
         <div className="relative">
           <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
             <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-              Most popular
+              {t("mostPopular")}
             </span>
           </div>
         </div>
@@ -50,12 +53,12 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onUpgrade }: PlanCard
         <CardTitle className="text-base">{plan.name}</CardTitle>
         <div className="flex items-baseline gap-1 mt-2">
           <span className="text-3xl font-bold">
-            {formatCurrency(plan.amount, plan.currency)}
+            {formatCurrency(plan.amount, plan.currency, locale)}
           </span>
           <span className="text-sm text-muted-foreground">/ {plan.interval}</span>
         </div>
         {plan.trial_days > 0 && (
-          <p className="text-xs text-muted-foreground">{plan.trial_days}-day free trial</p>
+          <p className="text-xs text-muted-foreground">{t("trialDays", { days: plan.trial_days })}</p>
         )}
       </CardHeader>
 
@@ -85,7 +88,7 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onUpgrade }: PlanCard
       <CardFooter>
         {isCurrentPlan ? (
           <Button variant="outline" className="w-full" disabled>
-            Current plan
+            {t("currentPlan")}
           </Button>
         ) : onUpgrade ? (
           <Button
@@ -94,7 +97,7 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onUpgrade }: PlanCard
             onClick={onUpgrade}
             disabled={loading}
           >
-            Upgrade
+            {t("upgrade")}
           </Button>
         ) : (
           <Button
@@ -103,7 +106,7 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onUpgrade }: PlanCard
             onClick={handleSelect}
             disabled={loading}
           >
-            {loading ? "Loading..." : "Get started"}
+            {loading ? t("loading") : t("getStarted")}
           </Button>
         )}
       </CardFooter>

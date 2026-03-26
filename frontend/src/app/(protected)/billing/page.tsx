@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { Plan } from "@/types";
 
 export default function BillingPage() {
   const t = useTranslations("billing");
+  const locale = useLocale();
   const router = useRouter();
   const { subscription, isLoading, isActive, isCancelling } = useSubscription();
   const { currentUserRole } = useTenantStore();
@@ -53,7 +54,7 @@ export default function BillingPage() {
     try {
       await openCustomerPortal();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to open billing portal");
+      toast.error(err instanceof Error ? err.message : t("details.failedPortal"));
     }
   };
 
@@ -62,14 +63,14 @@ export default function BillingPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your subscription and billing information.
+          {t("subtitle")}
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t("currentPlan")}</CardTitle>
-          <CardDescription>Your current subscription details</CardDescription>
+          <CardDescription>{t("details.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -82,10 +83,10 @@ export default function BillingPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-lg font-semibold">{subscription.plan?.name ?? "Active subscription"}</p>
+                  <p className="text-lg font-semibold">{subscription.plan?.name ?? t("details.activePlan")}</p>
                   {subscription.plan && (
                     <p className="text-sm text-muted-foreground">
-                      {new Intl.NumberFormat("en-US", {
+                      {new Intl.NumberFormat(locale, {
                         style: "currency",
                         currency: subscription.plan.currency,
                       }).format(subscription.plan.amount / 100)}{" "}
@@ -101,36 +102,36 @@ export default function BillingPage() {
                   {isCancelling && subscription.current_period_end && (
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Access until
+                        {t("details.accessUntil")}
                       </p>
-                      <p className="mt-1 text-sm font-medium">{formatDate(subscription.current_period_end)}</p>
+                      <p className="mt-1 text-sm font-medium">{formatDate(subscription.current_period_end, locale)}</p>
                     </div>
                   )}
                   {!isCancelling && subscription.current_period_start && subscription.current_period_end && (
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Current period
+                        {t("details.currentPeriod")}
                       </p>
                       <p className="mt-1 text-sm">
-                        {formatDate(subscription.current_period_start)} –{" "}
-                        {formatDate(subscription.current_period_end)}
+                        {formatDate(subscription.current_period_start, locale)} –{" "}
+                        {formatDate(subscription.current_period_end, locale)}
                       </p>
                     </div>
                   )}
                   {subscription.trial_end && (
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Trial ends
+                        {t("details.trialEnds")}
                       </p>
-                      <p className="mt-1 text-sm">{formatDate(subscription.trial_end)}</p>
+                      <p className="mt-1 text-sm">{formatDate(subscription.trial_end, locale)}</p>
                     </div>
                   )}
                   {subscription.cancelled_at && (
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Cancelled on
+                        {t("details.cancelledOn")}
                       </p>
-                      <p className="mt-1 text-sm">{formatDate(subscription.cancelled_at)}</p>
+                      <p className="mt-1 text-sm">{formatDate(subscription.cancelled_at, locale)}</p>
                     </div>
                   )}
                 </div>
@@ -139,7 +140,7 @@ export default function BillingPage() {
           ) : (
             <div className="py-4">
               <p className="text-sm text-muted-foreground mb-6">
-                Choose a plan to get started. Pick the Free plan to continue at no cost, or upgrade for more features.
+                {t("details.choosePlan")}
               </p>
               {plansLoading ? (
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -164,12 +165,12 @@ export default function BillingPage() {
           <CardFooter className="flex flex-col items-start gap-3 border-t border-border pt-6">
             {isCancelling && (
               <p className="text-sm text-muted-foreground">
-                You can reactivate your subscription before the access period ends.
+                {t("details.reactivateNote")}
               </p>
             )}
             <Button onClick={handleManage} className="gap-2">
               <ExternalLink className="h-4 w-4" />
-              {isCancelling ? "Reactivate subscription" : t("manage")}
+              {isCancelling ? t("details.reactivate") : t("manage")}
             </Button>
             {!isCancelling && (
               <Link

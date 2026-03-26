@@ -121,7 +121,7 @@ export default function NotificationsPage() {
           <h1 className="text-2xl font-semibold">{t("title")}</h1>
           {unreadCount > 0 && (
             <p className="text-sm text-muted-foreground mt-0.5">
-              {unreadCount} unread
+              {t("unread", { count: unreadCount })}
             </p>
           )}
         </div>

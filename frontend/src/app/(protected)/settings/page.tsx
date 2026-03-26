@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,8 @@ import { api } from "@/lib/api";
 import { User } from "@/types";
 
 export default function SettingsPage() {
+  const t = useTranslations("settings");
+  const tCommon = useTranslations("common");
   const { user, setUser } = useAuthStore();
 
   const [form, setForm] = useState({
@@ -29,9 +32,9 @@ export default function SettingsPage() {
     try {
       const updated = await api.patch<User>("/users/me/", form);
       setUser(updated);
-      toast.success("Settings saved.");
+      toast.success(t("profile.saved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save settings");
+      toast.error(err instanceof Error ? err.message : t("profile.failedToSave"));
     } finally {
       setSaving(false);
     }
@@ -42,13 +45,13 @@ export default function SettingsPage() {
     setChangingEmail(true);
     try {
       await api.post("/users/me/email/", emailForm);
-      toast.success(`Verification email sent to ${emailForm.new_email}. Check your inbox.`);
+      toast.success(t("email.verificationSent", { email: emailForm.new_email }));
       setShowEmailForm(false);
       setEmailForm({ new_email: "", password: "" });
       const updated = await api.get<User>("/users/me/");
       setUser(updated);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to initiate email change");
+      toast.error(err instanceof Error ? err.message : t("email.failedToInitiate"));
     } finally {
       setChangingEmail(false);
     }
@@ -57,23 +60,23 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your account settings and preferences.
+          {t("subtitle")}
         </p>
       </div>
 
       {/* Profile settings */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Profile</CardTitle>
-          <CardDescription>Update your personal information.</CardDescription>
+          <CardTitle className="text-base">{t("profile.title")}</CardTitle>
+          <CardDescription>{t("profile.description")}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSave}>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="first_name">First name</Label>
+                <Label htmlFor="first_name">{t("profile.firstName")}</Label>
                 <Input
                   id="first_name"
                   name="first_name"
@@ -82,7 +85,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="last_name">Last name</Label>
+                <Label htmlFor="last_name">{t("profile.lastName")}</Label>
                 <Input
                   id="last_name"
                   name="last_name"
@@ -92,23 +95,23 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <Label>Email</Label>
+              <Label>{t("profile.email")}</Label>
               <div className="flex items-center gap-3">
                 <Input value={user?.email ?? ""} readOnly className="bg-muted text-muted-foreground" />
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowEmailForm((v) => !v)}>
-                  Change
+                  {t("profile.change")}
                 </Button>
               </div>
               {user?.pending_email && (
                 <p className="text-xs text-amber-600">
-                  Pending change to <strong>{user.pending_email}</strong> — check that inbox to confirm.
+                  {t("profile.pendingEmail", { email: user.pending_email })}
                 </p>
               )}
             </div>
           </CardContent>
           <CardFooter className="border-t border-border pt-6">
             <Button type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Save changes"}
+              {saving ? t("profile.saving") : t("profile.saveChanges")}
             </Button>
           </CardFooter>
         </form>
@@ -118,13 +121,13 @@ export default function SettingsPage() {
       {showEmailForm && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Change email address</CardTitle>
-            <CardDescription>We&apos;ll send a verification link to your new address.</CardDescription>
+            <CardTitle className="text-base">{t("email.title")}</CardTitle>
+            <CardDescription>{t("email.description")}</CardDescription>
           </CardHeader>
           <form onSubmit={handleEmailChange}>
             <CardContent className="space-y-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="new_email">New email</Label>
+                <Label htmlFor="new_email">{t("email.newEmail")}</Label>
                 <Input
                   id="new_email"
                   type="email"
@@ -134,7 +137,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="current_password">Current password</Label>
+                <Label htmlFor="current_password">{t("email.currentPassword")}</Label>
                 <Input
                   id="current_password"
                   type="password"
@@ -146,14 +149,14 @@ export default function SettingsPage() {
             </CardContent>
             <CardFooter className="border-t border-border pt-6 gap-2">
               <Button type="submit" disabled={changingEmail}>
-                {changingEmail ? "Sending..." : "Send verification"}
+                {changingEmail ? t("email.sending") : t("email.sendVerification")}
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => { setShowEmailForm(false); setEmailForm({ new_email: "", password: "" }); }}
               >
-                Cancel
+                {tCommon("cancel")}
               </Button>
             </CardFooter>
           </form>
@@ -163,23 +166,23 @@ export default function SettingsPage() {
       {/* Danger zone */}
       <Card className="border-destructive/30">
         <CardHeader>
-          <CardTitle className="text-base text-destructive">Danger zone</CardTitle>
-          <CardDescription>Irreversible actions for your account.</CardDescription>
+          <CardTitle className="text-base text-destructive">{t("danger.title")}</CardTitle>
+          <CardDescription>{t("danger.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 p-4">
             <div>
-              <p className="text-sm font-medium">Delete account</p>
+              <p className="text-sm font-medium">{t("danger.deleteAccount")}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Permanently delete your account and all associated data.
+                {t("danger.deleteDescription")}
               </p>
             </div>
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => toast.error("Please contact support to delete your account.")}
+              onClick={() => toast.error(t("danger.contactSupport"))}
             >
-              Delete account
+              {t("danger.deleteAccount")}
             </Button>
           </div>
         </CardContent>

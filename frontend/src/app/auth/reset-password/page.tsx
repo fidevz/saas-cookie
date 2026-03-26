@@ -25,7 +25,7 @@ function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
-      setError("Invalid or missing reset token.");
+      setError(t("invalidToken"));
       return;
     }
     setError(null);
@@ -36,7 +36,7 @@ function ResetPasswordForm() {
       toast.success(t("success"));
       setTimeout(() => router.push("/auth/login"), 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reset password");
+      setError(err instanceof Error ? err.message : t("failedToReset"));
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ function ResetPasswordForm() {
               <CheckCircle className="h-6 w-6 text-emerald-600" />
             </div>
             <p className="text-sm font-medium">{t("success")}</p>
-            <p className="text-xs text-muted-foreground">Redirecting to sign in...</p>
+            <p className="text-xs text-muted-foreground">{t("redirectingToSignIn")}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -88,7 +88,7 @@ function ResetPasswordForm() {
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Resetting..." : t("submit")}
+              {loading ? t("resetting") : t("submit")}
             </Button>
           </form>
         )}

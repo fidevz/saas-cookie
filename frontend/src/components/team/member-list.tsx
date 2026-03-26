@@ -31,9 +31,9 @@ export function MemberList({ members, invitations, currentUserRole }: MemberList
     try {
       await api.delete(`/tenants/members/${membership.id}/`);
       removeMember(membership.user.id);
-      toast.success(`${membership.user.first_name} removed from team.`);
+      toast.success(t("removedMember", { name: membership.user.first_name }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to remove member");
+      toast.error(err instanceof Error ? err.message : t("failedToRemove"));
     }
   };
 
@@ -44,7 +44,7 @@ export function MemberList({ members, invitations, currentUserRole }: MemberList
       removeInvitation(invitation.id);
       toast.success(t("inviteCancelled"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to cancel invitation");
+      toast.error(err instanceof Error ? err.message : t("failedToCancelInvite"));
     }
   };
 
@@ -69,7 +69,7 @@ export function MemberList({ members, invitations, currentUserRole }: MemberList
                 <p className="text-sm font-medium text-foreground">
                   {membership.user.first_name} {membership.user.last_name}
                   {isCurrentUser && (
-                    <span className="ml-2 text-xs text-muted-foreground">(you)</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{t("you")}</span>
                   )}
                 </p>
                 <p className="text-xs text-muted-foreground">{membership.user.email}</p>
@@ -85,7 +85,7 @@ export function MemberList({ members, invitations, currentUserRole }: MemberList
                   onClick={() => handleRemove(membership)}
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Remove member</span>
+                  <span className="sr-only">{t("removeMember")}</span>
                 </Button>
               )}
             </div>

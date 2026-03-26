@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { LanguageToggle } from "@/components/ui/language-toggle";
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "MyApp";
 
@@ -149,6 +150,25 @@ export function Sidebar() {
 
       {/* User section */}
       <div className="border-t border-border p-3">
+        {!collapsed && (
+          <div className="px-1">
+            <LanguageToggle collapsed={false} />
+            <ThemeToggle collapsed={false} />
+          </div>
+        )}
+        {collapsed && (
+          <div className="flex flex-col items-center gap-1">
+            <LanguageToggle collapsed={true} />
+            <ThemeToggle collapsed={true} />
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              aria-label={t("signOut")}
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        )}
         <div
           className={cn(
             "flex items-center gap-3 rounded-md px-2 py-2",
@@ -182,23 +202,6 @@ export function Sidebar() {
             </button>
           )}
         </div>
-        {!collapsed && (
-          <div className="px-1">
-            <ThemeToggle collapsed={false} />
-          </div>
-        )}
-        {collapsed && (
-          <div className="mt-1 flex flex-col items-center gap-1">
-            <ThemeToggle collapsed={true} />
-            <button
-              onClick={handleSignOut}
-              className="flex w-full items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-              aria-label={t("signOut")}
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { verifyEmail } from "@/lib/auth";
@@ -11,6 +12,7 @@ import { getTenantUrl } from "@/lib/tenant";
 type State = "loading" | "success" | "error";
 
 export default function VerifyEmailPage() {
+  const t = useTranslations("auth.verifyEmail");
   const params = useParams<{ key: string }>();
   const router = useRouter();
   const [state, setState] = useState<State>("loading");
@@ -23,7 +25,7 @@ export default function VerifyEmailPage() {
     const key = decodeURIComponent(params.key);
     if (!key) {
       setState("error");
-      setErrorMessage("Invalid verification link.");
+      setErrorMessage(t("invalidLink"));
       return;
     }
 
@@ -36,7 +38,7 @@ export default function VerifyEmailPage() {
       .catch((err) => {
         setState("error");
         setErrorMessage(
-          err instanceof Error ? err.message : "Invalid or expired verification link."
+          err instanceof Error ? err.message : t("expiredLink")
         );
       });
   }, [params.key]);
@@ -67,14 +69,14 @@ export default function VerifyEmailPage() {
               </span>
             </div>
           </Link>
-          <h1 className="mt-4 text-2xl font-bold tracking-tight">Email Verification</h1>
+          <h1 className="mt-4 text-2xl font-bold tracking-tight">{t("title")}</h1>
         </div>
 
         <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-background p-8 text-center">
           {state === "loading" && (
             <>
               <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Verifying your email address…</p>
+              <p className="text-sm text-muted-foreground">{t("verifying")}</p>
             </>
           )}
 
@@ -84,9 +86,9 @@ export default function VerifyEmailPage() {
                 <CheckCircle className="h-7 w-7 text-emerald-600" />
               </div>
               <div>
-                <p className="font-semibold">Email verified!</p>
+                <p className="font-semibold">{t("verified")}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Your account is active. Signing you in…
+                  {t("verifiedDescription")}
                 </p>
               </div>
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -99,13 +101,13 @@ export default function VerifyEmailPage() {
                 <XCircle className="h-7 w-7 text-destructive" />
               </div>
               <div>
-                <p className="font-semibold">Verification failed</p>
+                <p className="font-semibold">{t("failed")}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {errorMessage ?? "This link may have expired or already been used."}
+                  {errorMessage ?? t("failedDescription")}
                 </p>
               </div>
               <Button asChild className="w-full">
-                <Link href="/auth/login">Back to sign in</Link>
+                <Link href="/auth/login">{t("backToSignIn")}</Link>
               </Button>
             </>
           )}

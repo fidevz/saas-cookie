@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -24,6 +25,8 @@ interface FeatureGateProps {
  * Otherwise renders a full-page upgrade wall listing plans that include it.
  */
 export function FeatureGate({ capability, title, description, children }: FeatureGateProps) {
+  const t = useTranslations("billing.featureGate");
+  const locale = useLocale();
   const { subscription, isLoading, hasCapability } = useSubscription();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [plansLoading, setPlansLoading] = useState(false);
@@ -53,7 +56,7 @@ export function FeatureGate({ capability, title, description, children }: Featur
     try {
       await openCustomerPortal();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to open billing portal");
+      toast.error(err instanceof Error ? err.message : t("failedPortal"));
     } finally {
       setPortalLoading(false);
     }
@@ -71,11 +74,11 @@ export function FeatureGate({ capability, title, description, children }: Featur
           <p className="mt-2 text-sm text-muted-foreground max-w-sm">{description}</p>
         )}
         <p className="mt-3 text-sm text-muted-foreground">
-          This feature is not included in your current plan.
+          {t("notIncluded")}
         </p>
 
         <Button className="mt-6" onClick={handleUpgrade} disabled={portalLoading}>
-          {portalLoading ? "Opening portal..." : "Upgrade plan"}
+          {portalLoading ? t("openingPortal") : t("upgradePlan")}
         </Button>
       </div>
 
@@ -88,7 +91,7 @@ export function FeatureGate({ capability, title, description, children }: Featur
       ) : plans.length > 0 ? (
         <div className="space-y-3">
           <p className="text-sm font-medium text-muted-foreground">
-            Available in these plans:
+            {t("availableIn")}
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             {plans.map((plan) => (
@@ -99,7 +102,7 @@ export function FeatureGate({ capability, title, description, children }: Featur
                 <div>
                   <p className="font-semibold">{plan.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {new Intl.NumberFormat("en-US", {
+                    {new Intl.NumberFormat(locale, {
                       style: "currency",
                       currency: plan.currency,
                     }).format(plan.amount / 100)}
@@ -107,7 +110,7 @@ export function FeatureGate({ capability, title, description, children }: Featur
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleUpgrade} disabled={portalLoading}>
-                  Upgrade
+                  {t("upgrade")}
                 </Button>
               </div>
             ))}

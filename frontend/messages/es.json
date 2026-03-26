@@ -8,7 +8,12 @@
     "back": "Atrás",
     "submit": "Enviar",
     "continue": "Continuar",
-    "or": "o"
+    "or": "o",
+    "sending": "Enviando...",
+    "saving": "Guardando...",
+    "goHome": "Ir al inicio",
+    "goToDashboard": "Ir al panel",
+    "backToBilling": "Volver a facturación"
   },
   "nav": {
     "features": "Características",
@@ -32,7 +37,12 @@
       "forgotPassword": "¿Olvidaste tu contraseña?",
       "noAccount": "¿No tienes una cuenta?",
       "signUp": "Regístrate",
-      "continueWithGoogle": "Continuar con Google"
+      "continueWithGoogle": "Continuar con Google",
+      "welcomeBack": "¡Bienvenido de nuevo, {name}!",
+      "signingIn": "Iniciando sesión...",
+      "loginFailed": "Error al iniciar sesión",
+      "emailPlaceholder": "tu@ejemplo.com",
+      "redirecting": "Redirigiendo..."
     },
     "register": {
       "title": "Crea tu cuenta",
@@ -48,7 +58,23 @@
       "terms": "Al registrarte, aceptas nuestros",
       "termsLink": "Términos de servicio",
       "and": "y",
-      "privacyLink": "Política de privacidad"
+      "privacyLink": "Política de privacidad",
+      "workspaceName": "Nombre del espacio",
+      "workspaceNamePlaceholder": "Mi empresa",
+      "workspaceUrl": "URL del espacio",
+      "workspaceUrlPlaceholder": "miempresa",
+      "creatingAccount": "Creando cuenta...",
+      "registrationFailed": "Error al registrarse",
+      "tosError": "Acepta los términos de servicio para continuar.",
+      "slugError": "Elige una URL de espacio disponible.",
+      "slugTaken": "Ya está en uso.",
+      "slugSuggestion": "Usar \"{suggestion}\" en su lugar",
+      "slugInvalid": "3–50 caracteres, solo letras minúsculas, números y guiones.",
+      "slugAvailable": "{slug}.{domain} está disponible",
+      "joiningWorkspace": "Te estás uniendo a",
+      "emailPlaceholder": "tu@ejemplo.com",
+      "firstNamePlaceholder": "Ana",
+      "lastNamePlaceholder": "García"
     },
     "forgotPassword": {
       "title": "Restablecer tu contraseña",
@@ -56,14 +82,22 @@
       "email": "Correo electrónico",
       "submit": "Enviar enlace de restablecimiento",
       "backToLogin": "Volver a iniciar sesión",
-      "success": "Revisa tu correo electrónico para un enlace de restablecimiento"
+      "success": "Revisa tu correo electrónico para un enlace de restablecimiento",
+      "sending": "Enviando...",
+      "failedToSend": "Error al enviar el enlace",
+      "sentDescription": "Enviamos un enlace a {email}. Revisa tu bandeja.",
+      "emailPlaceholder": "tu@ejemplo.com"
     },
     "resetPassword": {
       "title": "Establecer nueva contraseña",
       "subtitle": "Ingresa tu nueva contraseña a continuación",
       "password": "Nueva contraseña",
       "submit": "Restablecer contraseña",
-      "success": "Contraseña restablecida exitosamente"
+      "success": "Contraseña restablecida exitosamente",
+      "resetting": "Restableciendo...",
+      "failedToReset": "Error al restablecer la contraseña",
+      "redirectingToSignIn": "Redirigiendo al inicio de sesión...",
+      "invalidToken": "Token de restablecimiento inválido o faltante."
     },
     "checkEmail": {
       "title": "Revisa tu correo",
@@ -71,7 +105,39 @@
       "body": "Haz clic en el enlace del correo para verificar tu cuenta. Si no lo ves, revisa tu carpeta de spam.",
       "resend": "Reenviar correo de verificación",
       "resent": "¡Correo de verificación enviado!",
-      "backToLogin": "Volver a iniciar sesión"
+      "backToLogin": "Volver a iniciar sesión",
+      "sending": "Enviando...",
+      "sentLink": "Enviamos un enlace a {email}",
+      "failedToResend": "Error al reenviar. Inténtalo de nuevo."
+    },
+    "callback": {
+      "googleFailed": "Error de autenticación con Google. Inténtalo de nuevo.",
+      "welcome": "¡Bienvenido, {name}!",
+      "loginExpired": "Código de acceso expirado. Por favor inicia sesión.",
+      "profileFailed": "Error al cargar tu perfil. Inténtalo de nuevo.",
+      "completingSignIn": "Completando inicio de sesión..."
+    },
+    "verifyEmail": {
+      "title": "Verificación de correo",
+      "verifying": "Verificando tu dirección de correo…",
+      "verified": "¡Correo verificado!",
+      "verifiedDescription": "Tu cuenta está activa. Iniciando sesión…",
+      "failed": "Verificación fallida",
+      "failedDescription": "Este enlace puede haber expirado o ya fue usado.",
+      "invalidLink": "Enlace de verificación inválido.",
+      "expiredLink": "Enlace de verificación inválido o expirado.",
+      "backToSignIn": "Volver al inicio de sesión"
+    },
+    "emailVerificationGate": {
+      "title": "Revisa tu bandeja",
+      "description": "Enviamos un enlace de verificación a {email}. Haz clic para activar tu cuenta.",
+      "resendIn": "Reenviar en {time}",
+      "sending": "Enviando...",
+      "resend": "Reenviar correo de verificación",
+      "differentAccount": "Usar otra cuenta",
+      "checkSpam": "¿No lo recibiste? Revisa tu carpeta de spam.",
+      "sent": "Correo de verificación enviado. Revisa tu bandeja.",
+      "failed": "Error al enviar el correo de verificación. Inténtalo de nuevo."
     }
   },
   "landing": {
@@ -102,21 +168,43 @@
       "annually": "Anual",
       "save": "Ahorra 20%",
       "cta": "Comenzar",
-      "popular": "Más popular"
+      "popular": "Más popular",
+      "trialDays": "{days} días de prueba gratuita"
     },
     "cta": {
       "title": "¿Listo para comenzar?",
       "subtitle": "Únete a miles de equipos que construyen con nuestra plataforma",
       "button": "Comenzar gratis"
+    },
+    "testimonials": {
+      "title": "Amado por desarrolladores",
+      "subtitle": "Los equipos confían en nuestra plataforma para lanzar rápido y escalar con confianza.",
+      "roleAt": "{role} en {company}"
     }
   },
   "dashboard": {
     "greeting": "¡Buenos {timeOfDay}, {name}!",
     "welcome": "Bienvenido a {appName}",
-    "subtitle": "Aquí hay un resumen de tu cuenta"
+    "subtitle": "Aquí hay un resumen de tu cuenta",
+    "there": "ahí",
+    "quickActions": "Acciones rápidas",
+    "goTo": "Ir a {title}",
+    "summary": {
+      "title": "Resumen de cuenta",
+      "description": "Detalles actuales de tu cuenta",
+      "email": "Correo",
+      "name": "Nombre",
+      "workspace": "Espacio de trabajo"
+    },
+    "links": {
+      "billing": { "title": "Facturación", "description": "Gestiona tu suscripción y detalles de facturación." },
+      "team": { "title": "Equipo", "description": "Invita miembros y gestiona roles." },
+      "support": { "title": "Soporte", "description": "Obtén ayuda de nuestro equipo." }
+    }
   },
   "billing": {
     "title": "Facturación",
+    "subtitle": "Gestiona tu suscripción e información de facturación.",
     "currentPlan": "Plan actual",
     "manage": "Gestionar suscripción",
     "cancel": "Cancelar suscripción",
@@ -131,15 +219,73 @@
         "other": "Otro"
       },
       "confirm": "Cancelar suscripción",
-      "keep": "Mantener suscripción"
+      "keep": "Mantener suscripción",
+      "selectReason": "Selecciona un motivo.",
+      "cancelled": "Tu suscripción ha sido cancelada.",
+      "failedToCancel": "Error al cancelar la suscripción",
+      "cancelledTitle": "Suscripción cancelada",
+      "cancelledDescription": "Tu suscripción ha sido cancelada. Conservarás el acceso hasta el final del período de facturación actual.",
+      "backToBilling": "Volver a facturación",
+      "cancelling": "Cancelando..."
     },
     "upgrade": {
       "title": "Mejora tu plan",
       "subtitle": "Obtén más funciones actualizando a un plan superior."
+    },
+    "details": {
+      "description": "Detalles de tu suscripción actual",
+      "activePlan": "Suscripción activa",
+      "accessUntil": "Acceso hasta",
+      "currentPeriod": "Período actual",
+      "trialEnds": "Prueba termina",
+      "cancelledOn": "Cancelado el",
+      "choosePlan": "Elige un plan para comenzar. Elige el plan gratuito para continuar sin costo, o mejora para más funciones.",
+      "reactivateNote": "Puedes reactivar tu suscripción antes de que termine el período de acceso.",
+      "reactivate": "Reactivar suscripción",
+      "failedPortal": "Error al abrir el portal de facturación"
+    },
+    "success": {
+      "title": "¡Pago exitoso!",
+      "description": "Tu suscripción está activa. Serás redirigido a facturación en unos segundos.",
+      "goToBilling": "Ir a facturación"
+    },
+    "cancelPage": {
+      "backToBilling": "Volver a facturación"
+    },
+    "featureGate": {
+      "notIncluded": "Esta función no está incluida en tu plan actual.",
+      "openingPortal": "Abriendo portal...",
+      "upgradePlan": "Mejorar plan",
+      "availableIn": "Disponible en estos planes:",
+      "upgrade": "Mejorar",
+      "failedPortal": "Error al abrir el portal de facturación"
+    },
+    "planCard": {
+      "mostPopular": "Más popular",
+      "trialDays": "{days} días de prueba gratuita",
+      "currentPlan": "Plan actual",
+      "upgrade": "Mejorar",
+      "loading": "Cargando...",
+      "getStarted": "Comenzar",
+      "failedCheckout": "Error al iniciar el pago"
+    },
+    "paywall": {
+      "logOut": "Cerrar sesión",
+      "choosePlan": "Elige tu plan",
+      "choosePlanSubtitle": "Selecciona un plan para comenzar. Puedes cambiar o cancelar en cualquier momento."
+    },
+    "subscriptionStatus": {
+      "active": "Activa",
+      "trialing": "Prueba",
+      "cancelling": "Cancelando",
+      "cancelled": "Cancelada",
+      "pastDue": "Vencida",
+      "unpaid": "Sin pagar"
     }
   },
   "team": {
     "title": "Equipo",
+    "description": "Gestiona los miembros de tu equipo y sus permisos.",
     "invite": "Invitar miembro",
     "inviteEmail": "Dirección de correo",
     "inviteRole": "Rol",
@@ -155,7 +301,20 @@
     "invited": "Invitado",
     "cancelInvite": "Cancelar invitación",
     "cancelInviteConfirm": "¿Estás seguro de que quieres cancelar esta invitación?",
-    "inviteCancelled": "Invitación cancelada."
+    "inviteCancelled": "Invitación cancelada.",
+    "memberCount": "Miembros ({count})",
+    "pendingCount": "{count} pendientes",
+    "removedMember": "{name} eliminado del equipo.",
+    "failedToRemove": "Error al eliminar miembro",
+    "failedToCancelInvite": "Error al cancelar invitación",
+    "you": "(tú)",
+    "removeMember": "Eliminar miembro",
+    "emailPlaceholder": "colega@empresa.com",
+    "sending": "Enviando...",
+    "management": {
+      "title": "Gestión de equipo",
+      "description": "Invita miembros, gestiona roles y colabora con tu equipo."
+    }
   },
   "notifications": {
     "title": "Notificaciones",
@@ -172,7 +331,9 @@
     "welcome": {
       "title": "¡Bienvenido a {appName}!",
       "body": "Nos alegra que estés aquí. Explora el panel para comenzar."
-    }
+    },
+    "unread": "{count} sin leer",
+    "markReadFailed": "Error al marcar notificaciones como leídas"
   },
   "legal": {
     "tos": { "title": "Términos de servicio", "lastUpdated": "Última actualización: enero de 2025" },
@@ -201,9 +362,23 @@
     "subtitle": "Únete a {tenantName} en {appName}",
     "accept": "Aceptar invitación",
     "expired": "Esta invitación ha expirado",
-    "alreadyMember": "Ya eres miembro"
+    "alreadyMember": "Ya eres miembro",
+    "joined": "¡Te has unido al equipo!",
+    "failedToAccept": "Error al aceptar la invitación",
+    "goHome": "Ir al inicio",
+    "goToDashboard": "Ir al panel",
+    "invitationFor": "Invitación para {email}",
+    "accepting": "Aceptando...",
+    "signUpToAccept": "Regístrate para aceptar",
+    "hasAccount": "¿Ya tienes cuenta? Inicia sesión"
   },
   "settings": {
+    "title": "Configuración",
+    "subtitle": "Gestiona la configuración de tu cuenta.",
+    "language": {
+      "label": "Idioma",
+      "toggleLabel": "Cambiar idioma"
+    },
     "appearance": {
       "title": "Apariencia",
       "label": "Tema",
@@ -211,6 +386,51 @@
       "dark": "Oscuro",
       "system": "Sistema",
       "toggleLabel": "Cambiar tema"
+    },
+    "profile": {
+      "title": "Perfil",
+      "description": "Actualiza tu información personal.",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "email": "Correo",
+      "change": "Cambiar",
+      "pendingEmail": "Cambio pendiente a {email} — confirma en esa bandeja.",
+      "saving": "Guardando...",
+      "saveChanges": "Guardar cambios",
+      "saved": "Configuración guardada.",
+      "failedToSave": "Error al guardar la configuración"
+    },
+    "email": {
+      "title": "Cambiar dirección de correo",
+      "description": "Enviaremos un enlace de verificación a tu nueva dirección.",
+      "newEmail": "Nuevo correo",
+      "currentPassword": "Contraseña actual",
+      "sending": "Enviando...",
+      "sendVerification": "Enviar verificación",
+      "verificationSent": "Correo de verificación enviado a {email}. Revisa tu bandeja.",
+      "failedToInitiate": "Error al iniciar el cambio de correo"
+    },
+    "danger": {
+      "title": "Zona peligrosa",
+      "description": "Acciones irreversibles para tu cuenta.",
+      "deleteAccount": "Eliminar cuenta",
+      "deleteDescription": "Elimina permanentemente tu cuenta y todos los datos asociados.",
+      "contactSupport": "Contacta a soporte para eliminar tu cuenta."
+    },
+    "cancelEmailChange": {
+      "loadingTitle": "Cancelando cambio de correo…",
+      "loadingDescription": "Por favor espera un momento.",
+      "successTitle": "Cambio de correo cancelado",
+      "successDescription": "Tu dirección de correo no ha sido modificada.",
+      "errorTitle": "Enlace inválido",
+      "errorDescription": "El enlace puede haber expirado o ya fue usado.",
+      "noToken": "No se proporcionó token.",
+      "failed": "Algo salió mal."
+    },
+    "confirmEmail": {
+      "invalidLink": "Enlace de confirmación inválido.",
+      "success": "Correo actualizado exitosamente.",
+      "failed": "Confirmación fallida."
     }
   },
   "errors": {
@@ -218,13 +438,31 @@
       "title": "Página no encontrada",
       "description": "Lo sentimos, no pudimos encontrar la página que buscas.",
       "goHome": "Ir al inicio",
-      "contactSupport": "Contactar soporte"
+      "contactSupport": "Contactar soporte",
+      "goToDashboard": "Ir al panel",
+      "description404": "La página que buscas no existe o fue movida."
     },
     "generic": {
       "title": "Algo salió mal",
       "description": "Ocurrió un error inesperado. Por favor intenta de nuevo o contacta soporte si el problema persiste.",
       "tryAgain": "Intentar de nuevo",
-      "goHome": "Ir al inicio"
+      "goHome": "Ir al inicio",
+      "errorId": "ID de error: {id}",
+      "goToDashboard": "Ir al panel"
     }
+  },
+  "footer": {
+    "tagline": "La forma más rápida de construir y lanzar tu SaaS.",
+    "product": "Producto",
+    "legal": "Legal",
+    "legalTos": "Términos de servicio",
+    "legalPrivacy": "Política de privacidad",
+    "legalCookies": "Política de cookies",
+    "support": "Soporte",
+    "contactUs": "Contáctanos",
+    "allRightsReserved": "Todos los derechos reservados.",
+    "terms": "Términos",
+    "privacy": "Privacidad",
+    "cookies": "Cookies"
   }
 }

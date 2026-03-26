@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Info, AlertTriangle, XCircle, Gift, Trash2 } from "lucide-react";
 import { cn, timeAgo } from "@/lib/utils";
 import { Notification } from "@/types";
@@ -34,6 +35,8 @@ export function NotificationItem({
   clampBody = true,
   onDelete,
 }: NotificationItemProps) {
+  const t = useTranslations("notifications");
+  const locale = useLocale();
   const { markRead } = useNotificationStore();
   const Icon = TYPE_ICONS[notification.type];
 
@@ -82,7 +85,7 @@ export function NotificationItem({
             {notification.body}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {timeAgo(notification.created_at)}
+            {timeAgo(notification.created_at, locale)}
           </p>
         </div>
         {!notification.read && !showDelete && (
@@ -98,7 +101,7 @@ export function NotificationItem({
           <button
             onClick={handleDelete}
             className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-            aria-label="Delete notification"
+            aria-label={t("deleteNotification")}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>

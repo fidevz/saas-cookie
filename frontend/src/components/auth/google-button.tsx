@@ -50,7 +50,7 @@ export function GoogleButton() {
           fill="#EA4335"
         />
       </svg>
-      {loading ? "Redirecting..." : t("continueWithGoogle")}
+      {loading ? t("redirecting") : t("continueWithGoogle")}
     </Button>
   );
 }

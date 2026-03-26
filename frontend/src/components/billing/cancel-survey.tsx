@@ -26,16 +26,16 @@ export function CancelSurvey() {
 
   const handleCancel = async () => {
     if (!reason) {
-      toast.error("Please select a reason.");
+      toast.error(t("selectReason"));
       return;
     }
     setLoading(true);
     try {
       await cancelSubscription(reason);
       setCancelled(true);
-      toast.success("Your subscription has been cancelled.");
+      toast.success(t("cancelled"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to cancel subscription");
+      toast.error(err instanceof Error ? err.message : t("failedToCancel"));
     } finally {
       setLoading(false);
     }
@@ -47,12 +47,12 @@ export function CancelSurvey() {
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <span className="text-2xl">✓</span>
         </div>
-        <h2 className="text-xl font-semibold">Subscription cancelled</h2>
+        <h2 className="text-xl font-semibold">{t("cancelledTitle")}</h2>
         <p className="text-sm text-muted-foreground max-w-sm">
-          Your subscription has been cancelled. You'll retain access until the end of your current billing period.
+          {t("cancelledDescription")}
         </p>
         <Button variant="outline" onClick={() => router.push("/billing")}>
-          Back to billing
+          {t("backToBilling")}
         </Button>
       </div>
     );
@@ -83,7 +83,7 @@ export function CancelSurvey() {
           disabled={loading || !reason}
           className="flex-1"
         >
-          {loading ? "Cancelling..." : t("confirm")}
+          {loading ? t("cancelling") : t("confirm")}
         </Button>
         <Button
           variant="outline"

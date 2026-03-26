@@ -49,7 +49,7 @@ export function InviteForm({ onInviteSent }: InviteFormProps) {
         <Input
           id="invite-email"
           type="email"
-          placeholder="colleague@company.com"
+          placeholder={t("emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -70,7 +70,7 @@ export function InviteForm({ onInviteSent }: InviteFormProps) {
       </div>
 
       <Button type="submit" disabled={loading} className="sm:shrink-0">
-        {loading ? "Sending..." : t("sendInvite")}
+        {loading ? t("sending") : t("sendInvite")}
       </Button>
     </form>
   );

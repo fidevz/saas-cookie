@@ -2,10 +2,12 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function BillingSuccessPage() {
+  const t = useTranslations("billing.success");
   const router = useRouter();
 
   // Redirect to billing after 5 seconds
@@ -19,12 +21,12 @@ export default function BillingSuccessPage() {
       <div className="flex justify-center mb-6">
         <CheckCircle className="h-16 w-16 text-emerald-500" />
       </div>
-      <h1 className="text-2xl font-bold tracking-tight mb-2">Payment successful!</h1>
+      <h1 className="text-2xl font-bold tracking-tight mb-2">{t("title")}</h1>
       <p className="text-muted-foreground mb-8">
-        Your subscription is now active. You&apos;ll be redirected to billing in a few seconds.
+        {t("description")}
       </p>
       <Button onClick={() => router.replace("/billing")}>
-        Go to billing
+        {t("goToBilling")}
       </Button>
     </div>
   );

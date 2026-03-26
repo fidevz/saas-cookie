@@ -6,6 +6,7 @@ const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "MyApp";
 
 export function Footer() {
   const t = useTranslations("nav");
+  const tFooter = useTranslations("footer");
 
   return (
     <footer className="border-t border-border bg-background">
@@ -22,13 +23,13 @@ export function Footer() {
               <span className="text-sm font-semibold">{APP_NAME}</span>
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-              The fastest way to build and ship your SaaS product.
+              {tFooter("tagline")}
             </p>
           </div>
 
           {/* Product */}
           <div>
-            <h3 className="mb-3 text-sm font-semibold">Product</h3>
+            <h3 className="mb-3 text-sm font-semibold">{tFooter("product")}</h3>
             <ul className="space-y-2">
               <li>
                 <Link
@@ -51,14 +52,14 @@ export function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className="mb-3 text-sm font-semibold">Legal</h3>
+            <h3 className="mb-3 text-sm font-semibold">{tFooter("legal")}</h3>
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/legal/tos"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Terms of Service
+                  {tFooter("legalTos")}
                 </Link>
               </li>
               <li>
@@ -66,7 +67,7 @@ export function Footer() {
                   href="/legal/privacy"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Privacy Policy
+                  {tFooter("legalPrivacy")}
                 </Link>
               </li>
               <li>
@@ -74,7 +75,7 @@ export function Footer() {
                   href="/legal/cookies"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Cookie Policy
+                  {tFooter("legalCookies")}
                 </Link>
               </li>
             </ul>
@@ -82,14 +83,14 @@ export function Footer() {
 
           {/* Support */}
           <div>
-            <h3 className="mb-3 text-sm font-semibold">Support</h3>
+            <h3 className="mb-3 text-sm font-semibold">{tFooter("support")}</h3>
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/support"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Contact us
+                  {tFooter("contactUs")}
                 </Link>
               </li>
             </ul>
@@ -98,26 +99,26 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} {APP_NAME}. All rights reserved.
+            &copy; {new Date().getFullYear()} {APP_NAME}. {tFooter("allRightsReserved")}
           </p>
           <div className="flex items-center gap-4">
             <Link
               href="/legal/tos"
               className="text-xs text-muted-foreground hover:text-foreground"
             >
-              Terms
+              {tFooter("terms")}
             </Link>
             <Link
               href="/legal/privacy"
               className="text-xs text-muted-foreground hover:text-foreground"
             >
-              Privacy
+              {tFooter("privacy")}
             </Link>
             <Link
               href="/legal/cookies"
               className="text-xs text-muted-foreground hover:text-foreground"
             >
-              Cookies
+              {tFooter("cookies")}
             </Link>
           </div>
         </div>

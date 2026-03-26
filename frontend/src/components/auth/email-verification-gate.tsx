@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Mail, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { resendVerificationEmail } from "@/lib/auth";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export function EmailVerificationGate({ email, onBack }: Props) {
+  const t = useTranslations("auth.emailVerificationGate");
   // Start with COOLDOWN_SECONDS as a conservative initial value to avoid a
   // flash of the enabled button before localStorage is read in the effect.
   const [secondsLeft, setSecondsLeft] = useState(COOLDOWN_SECONDS);
@@ -67,9 +69,9 @@ export function EmailVerificationGate({ email, onBack }: Props) {
         localStorage.setItem(STORAGE_KEY, Date.now().toString());
       }
       setSecondsLeft(COOLDOWN_SECONDS);
-      toast.success("Verification email sent. Check your inbox.");
+      toast.success(t("sent"));
     } catch {
-      toast.error("Failed to send verification email. Please try again.");
+      toast.error(t("failed"));
     } finally {
       setSending(false);
     }
@@ -82,11 +84,9 @@ export function EmailVerificationGate({ email, onBack }: Props) {
       </div>
 
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold tracking-tight">Check your inbox</h2>
+        <h2 className="text-xl font-semibold tracking-tight">{t("title")}</h2>
         <p className="text-sm text-muted-foreground max-w-xs">
-          We sent a verification link to{" "}
-          <span className="font-medium text-foreground">{email}</span>.
-          Click the link to activate your account.
+          {t("description", { email })}
         </p>
       </div>
 
@@ -99,19 +99,19 @@ export function EmailVerificationGate({ email, onBack }: Props) {
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${sending ? "animate-spin" : ""}`} />
           {secondsLeft > 0
-            ? `Resend in ${formatCountdown(secondsLeft)}`
+            ? t("resendIn", { time: formatCountdown(secondsLeft) })
             : sending
-            ? "Sending..."
-            : "Resend verification email"}
+            ? t("sending")
+            : t("resend")}
         </Button>
 
         <Button variant="ghost" onClick={onBack} className="w-full text-muted-foreground">
-          Use a different account
+          {t("differentAccount")}
         </Button>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Didn&apos;t receive it? Check your spam folder.
+        {t("checkSpam")}
       </p>
     </div>
   );

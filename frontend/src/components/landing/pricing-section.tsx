@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -66,6 +66,7 @@ const FALLBACK_PLANS = [
 
 export function PricingSection({ plans: initialPlans }: PricingSectionProps) {
   const t = useTranslations("landing.pricing");
+  const locale = useLocale();
   const [annual, setAnnual] = useState(false);
   const [plans, setPlans] = useState<Plan[] | undefined>(initialPlans);
 
@@ -80,7 +81,7 @@ export function PricingSection({ plans: initialPlans }: PricingSectionProps) {
 
   function getPrice(plan: Pick<Plan, "amount" | "currency">) {
     const amount = annual ? Math.floor(plan.amount * 0.8) : plan.amount;
-    return formatCurrency(amount, plan.currency);
+    return formatCurrency(amount, plan.currency, locale);
   }
 
   return (
@@ -167,7 +168,7 @@ export function PricingSection({ plans: initialPlans }: PricingSectionProps) {
                   </div>
                   {plan.trial_days > 0 && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {plan.trial_days}-day free trial
+                      {t("trialDays", { days: plan.trial_days })}
                     </p>
                   )}
                 </div>

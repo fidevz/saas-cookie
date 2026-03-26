@@ -18,7 +18,7 @@ export function NotificationDropdown() {
     try {
       await api.post("/notifications/read-all/", {});
     } catch {
-      toast.error("Failed to mark notifications as read");
+      toast.error(t("markReadFailed"));
     }
   };
 

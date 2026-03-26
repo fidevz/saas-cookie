@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
       await requestPasswordReset(email);
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send reset link");
+      setError(err instanceof Error ? err.message : t("failedToSend"));
     } finally {
       setLoading(false);
     }
@@ -52,9 +52,7 @@ export default function ForgotPasswordPage() {
               <CheckCircle className="h-6 w-6 text-emerald-600" />
             </div>
             <p className="text-sm font-medium">{t("success")}</p>
-            <p className="text-xs text-muted-foreground">
-              We sent a reset link to <strong>{email}</strong>. Check your inbox.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("sentDescription", { email })}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -63,7 +61,7 @@ export default function ForgotPasswordPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t("emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -78,7 +76,7 @@ export default function ForgotPasswordPage() {
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Sending..." : t("submit")}
+              {loading ? t("sending") : t("submit")}
             </Button>
           </form>
         )}

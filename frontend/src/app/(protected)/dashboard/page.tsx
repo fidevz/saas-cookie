@@ -20,22 +20,22 @@ export default function DashboardPage() {
 
   const quickLinks = [
     {
-      title: "Billing",
-      description: "Manage your subscription and billing details.",
+      title: t("links.billing.title"),
+      description: t("links.billing.description"),
       href: "/billing",
       icon: CreditCard,
       show: flags.BILLING,
     },
     {
-      title: "Team",
-      description: "Invite members and manage roles.",
+      title: t("links.team.title"),
+      description: t("links.team.description"),
       href: "/settings/team",
       icon: Users,
       show: flags.TEAMS,
     },
     {
-      title: "Support",
-      description: "Get help from our support team.",
+      title: t("links.support.title"),
+      description: t("links.support.description"),
       href: "/support",
       icon: HelpCircle,
       show: true,
@@ -49,7 +49,7 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold tracking-tight">
           {t("greeting", {
             timeOfDay,
-            name: user?.first_name ?? "there",
+            name: user?.first_name ?? t("there"),
           })}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -60,19 +60,19 @@ export default function DashboardPage() {
       {/* Account summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Account summary</CardTitle>
-          <CardDescription>Your current account details</CardDescription>
+          <CardTitle className="text-base">{t("summary.title")}</CardTitle>
+          <CardDescription>{t("summary.description")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Email
+              {t("summary.email")}
             </p>
             <p className="text-sm font-medium">{user?.email}</p>
           </div>
           <div className="space-y-1">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Name
+              {t("summary.name")}
             </p>
             <p className="text-sm font-medium">
               {user?.first_name} {user?.last_name}
@@ -80,7 +80,7 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-1">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Workspace
+              {t("summary.workspace")}
             </p>
             <p className="text-sm font-medium">{APP_NAME}</p>
           </div>
@@ -89,7 +89,7 @@ export default function DashboardPage() {
 
       {/* Quick links */}
       <div>
-        <h2 className="mb-4 text-base font-semibold">Quick actions</h2>
+        <h2 className="mb-4 text-base font-semibold">{t("quickActions")}</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {quickLinks.map((link) => {
             const Icon = link.icon;
@@ -107,7 +107,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1 text-xs font-medium text-slate-500 group-hover:text-slate-900 transition-colors">
-                      Go to {link.title.toLowerCase()}
+                      {t("goTo", { title: link.title.toLowerCase() })}
                       <ArrowRight className="h-3 w-3" />
                     </div>
                   </CardContent>

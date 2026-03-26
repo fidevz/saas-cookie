@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { LogOut } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlanCard } from "@/components/billing/plan-card";
@@ -11,6 +12,7 @@ import { logout as logoutApi } from "@/lib/auth";
 import { Plan } from "@/types";
 
 export function Paywall() {
+  const t = useTranslations("billing.paywall");
   const { logout, user } = useAuthStore();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ export function Paywall() {
           )}
           <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
             <LogOut className="h-4 w-4" />
-            Log out
+            {t("logOut")}
           </Button>
         </div>
       </header>
@@ -57,10 +59,10 @@ export function Paywall() {
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-16">
         <div className="mx-auto max-w-2xl text-center mb-10">
           <h1 className="text-3xl font-bold tracking-tight">
-            Choose your plan
+            {t("choosePlan")}
           </h1>
           <p className="mt-3 text-muted-foreground">
-            Select a plan to get started. You can change or cancel anytime.
+            {t("choosePlanSubtitle")}
           </p>
         </div>
 

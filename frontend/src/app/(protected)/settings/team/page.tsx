@@ -54,14 +54,14 @@ export default function TeamPage() {
   return (
     <FeatureGate
       capability="teams"
-      title="Team Management"
-      description="Invite members, manage roles, and collaborate with your team."
+      title={t("management.title")}
+      description={t("management.description")}
     >
     <div className="mx-auto max-w-3xl space-y-8 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your team members and their permissions.
+          {t("description")}
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export default function TeamPage() {
       {/* Member list */}
       <div>
         <h2 className="mb-4 text-sm font-semibold">
-          Members ({members.length}){invitations.length > 0 && ` · ${invitations.length} pending`}
+          {t("memberCount", { count: members.length })}{invitations.length > 0 && ` · ${t("pendingCount", { count: invitations.length })}`}
         </h2>
         {loading ? (
           <div className="space-y-3">

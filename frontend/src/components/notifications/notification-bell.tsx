@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Bell } from "lucide-react";
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import { useNotificationStore } from "@/stores/notification-store";
 import { cn } from "@/lib/utils";
 
 export function NotificationBell() {
+  const t = useTranslations("notifications");
   const { unreadCount } = useNotificationStore();
   const [open, setOpen] = useState(false);
 
@@ -23,7 +25,7 @@ export function NotificationBell() {
             "relative flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
             open && "bg-accent text-foreground"
           )}
-          aria-label="Notifications"
+          aria-label={t("title")}
         >
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (

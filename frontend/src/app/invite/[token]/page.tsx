@@ -44,10 +44,10 @@ export default function InvitePage() {
     setAccepting(true);
     try {
       await api.post(`/teams/accept-invite/${token}/`, {});
-      toast.success("You've joined the team!");
+      toast.success(t("joined"));
       router.push("/dashboard");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to accept invitation");
+      toast.error(err instanceof Error ? err.message : t("failedToAccept"));
       setAccepting(false);
     }
   };
@@ -76,7 +76,7 @@ export default function InvitePage() {
               <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
                 <p className="text-sm text-muted-foreground">{fetchError}</p>
                 <Button asChild variant="outline">
-                  <Link href="/">Go home</Link>
+                  <Link href="/">{t("goHome")}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -85,7 +85,7 @@ export default function InvitePage() {
               <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
                 <p className="text-sm font-medium">{t("alreadyMember")}</p>
                 <Button asChild>
-                  <Link href="/dashboard">Go to dashboard</Link>
+                  <Link href="/dashboard">{t("goToDashboard")}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -94,7 +94,7 @@ export default function InvitePage() {
               <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
                 <p className="text-sm text-muted-foreground">{t("expired")}</p>
                 <Button asChild variant="outline">
-                  <Link href="/">Go home</Link>
+                  <Link href="/">{t("goHome")}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -115,22 +115,22 @@ export default function InvitePage() {
               <CardContent className="flex flex-col gap-3">
                 {invitation && (
                   <div className="rounded-lg bg-muted/50 px-4 py-3 text-sm text-center text-muted-foreground">
-                    Invitation for <strong>{invitation.email}</strong>
+                    {t("invitationFor", { email: invitation.email })}
                   </div>
                 )}
                 {!isLoading && (
                   <Button onClick={handleAccept} disabled={accepting} className="w-full">
                     {accepting
-                      ? "Accepting..."
+                      ? t("accepting")
                       : isAuthenticated
                       ? t("accept")
-                      : "Sign up to accept"}
+                      : t("signUpToAccept")}
                   </Button>
                 )}
                 {!isAuthenticated && !isLoading && (
                   <Button asChild variant="outline" className="w-full">
                     <Link href={`/auth/login?callbackUrl=/invite/${token}`}>
-                      Already have an account? Sign in
+                      {t("hasAccount")}
                     </Link>
                   </Button>
                 )}

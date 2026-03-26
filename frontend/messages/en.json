@@ -8,7 +8,12 @@
     "back": "Back",
     "submit": "Submit",
     "continue": "Continue",
-    "or": "or"
+    "or": "or",
+    "sending": "Sending...",
+    "saving": "Saving...",
+    "goHome": "Go home",
+    "goToDashboard": "Go to Dashboard",
+    "backToBilling": "Back to billing"
   },
   "nav": {
     "features": "Features",
@@ -32,7 +37,12 @@
       "forgotPassword": "Forgot password?",
       "noAccount": "Don't have an account?",
       "signUp": "Sign up",
-      "continueWithGoogle": "Continue with Google"
+      "continueWithGoogle": "Continue with Google",
+      "welcomeBack": "Welcome back, {name}!",
+      "signingIn": "Signing in...",
+      "loginFailed": "Login failed",
+      "emailPlaceholder": "you@example.com",
+      "redirecting": "Redirecting..."
     },
     "register": {
       "title": "Create your account",
@@ -48,7 +58,23 @@
       "terms": "By signing up, you agree to our",
       "termsLink": "Terms of Service",
       "and": "and",
-      "privacyLink": "Privacy Policy"
+      "privacyLink": "Privacy Policy",
+      "workspaceName": "Workspace name",
+      "workspaceNamePlaceholder": "Acme Inc.",
+      "workspaceUrl": "Workspace URL",
+      "workspaceUrlPlaceholder": "acme",
+      "creatingAccount": "Creating account...",
+      "registrationFailed": "Registration failed",
+      "tosError": "Please accept the terms of service to continue.",
+      "slugError": "Please choose an available workspace URL.",
+      "slugTaken": "Already taken.",
+      "slugSuggestion": "Use \"{suggestion}\" instead",
+      "slugInvalid": "3–50 characters, lowercase letters, numbers, and hyphens only.",
+      "slugAvailable": "{slug}.{domain} is available",
+      "joiningWorkspace": "You're joining",
+      "emailPlaceholder": "you@example.com",
+      "firstNamePlaceholder": "Jane",
+      "lastNamePlaceholder": "Smith"
     },
     "forgotPassword": {
       "title": "Reset your password",
@@ -56,14 +82,22 @@
       "email": "Email",
       "submit": "Send reset link",
       "backToLogin": "Back to sign in",
-      "success": "Check your email for a reset link"
+      "success": "Check your email for a reset link",
+      "sending": "Sending...",
+      "failedToSend": "Failed to send reset link",
+      "sentDescription": "We sent a reset link to {email}. Check your inbox.",
+      "emailPlaceholder": "you@example.com"
     },
     "resetPassword": {
       "title": "Set new password",
       "subtitle": "Enter your new password below",
       "password": "New password",
       "submit": "Reset password",
-      "success": "Password reset successfully"
+      "success": "Password reset successfully",
+      "resetting": "Resetting...",
+      "failedToReset": "Failed to reset password",
+      "redirectingToSignIn": "Redirecting to sign in...",
+      "invalidToken": "Invalid or missing reset token."
     },
     "checkEmail": {
       "title": "Check your email",
@@ -71,7 +105,39 @@
       "body": "Click the link in the email to verify your account. If you don't see it, check your spam folder.",
       "resend": "Resend verification email",
       "resent": "Verification email sent!",
-      "backToLogin": "Back to sign in"
+      "backToLogin": "Back to sign in",
+      "sending": "Sending...",
+      "sentLink": "We sent a link to {email}",
+      "failedToResend": "Failed to resend. Please try again."
+    },
+    "callback": {
+      "googleFailed": "Google authentication failed. Please try again.",
+      "welcome": "Welcome, {name}!",
+      "loginExpired": "Login code expired. Please sign in.",
+      "profileFailed": "Failed to load your profile. Please try again.",
+      "completingSignIn": "Completing sign in..."
+    },
+    "verifyEmail": {
+      "title": "Email Verification",
+      "verifying": "Verifying your email address…",
+      "verified": "Email verified!",
+      "verifiedDescription": "Your account is active. Signing you in…",
+      "failed": "Verification failed",
+      "failedDescription": "This link may have expired or already been used.",
+      "invalidLink": "Invalid verification link.",
+      "expiredLink": "Invalid or expired verification link.",
+      "backToSignIn": "Back to sign in"
+    },
+    "emailVerificationGate": {
+      "title": "Check your inbox",
+      "description": "We sent a verification link to {email}. Click the link to activate your account.",
+      "resendIn": "Resend in {time}",
+      "sending": "Sending...",
+      "resend": "Resend verification email",
+      "differentAccount": "Use a different account",
+      "checkSpam": "Didn't receive it? Check your spam folder.",
+      "sent": "Verification email sent. Check your inbox.",
+      "failed": "Failed to send verification email. Please try again."
     }
   },
   "landing": {
@@ -102,21 +168,43 @@
       "annually": "Annually",
       "save": "Save 20%",
       "cta": "Get started",
-      "popular": "Most popular"
+      "popular": "Most popular",
+      "trialDays": "{days}-day free trial"
     },
     "cta": {
       "title": "Ready to get started?",
       "subtitle": "Join thousands of teams building with our platform",
       "button": "Start for free"
+    },
+    "testimonials": {
+      "title": "Loved by builders",
+      "subtitle": "Teams trust our platform to launch fast and scale with confidence.",
+      "roleAt": "{role} at {company}"
     }
   },
   "dashboard": {
     "greeting": "Good {timeOfDay}, {name}!",
     "welcome": "Welcome to {appName}",
-    "subtitle": "Here's an overview of your account"
+    "subtitle": "Here's an overview of your account",
+    "there": "there",
+    "quickActions": "Quick actions",
+    "goTo": "Go to {title}",
+    "summary": {
+      "title": "Account summary",
+      "description": "Your current account details",
+      "email": "Email",
+      "name": "Name",
+      "workspace": "Workspace"
+    },
+    "links": {
+      "billing": { "title": "Billing", "description": "Manage your subscription and billing details." },
+      "team": { "title": "Team", "description": "Invite members and manage roles." },
+      "support": { "title": "Support", "description": "Get help from our support team." }
+    }
   },
   "billing": {
     "title": "Billing",
+    "subtitle": "Manage your subscription and billing information.",
     "currentPlan": "Current plan",
     "manage": "Manage subscription",
     "cancel": "Cancel subscription",
@@ -131,15 +219,73 @@
         "other": "Other"
       },
       "confirm": "Cancel subscription",
-      "keep": "Keep subscription"
+      "keep": "Keep subscription",
+      "selectReason": "Please select a reason.",
+      "cancelled": "Your subscription has been cancelled.",
+      "failedToCancel": "Failed to cancel subscription",
+      "cancelledTitle": "Subscription cancelled",
+      "cancelledDescription": "Your subscription has been cancelled. You'll retain access until the end of your current billing period.",
+      "backToBilling": "Back to billing",
+      "cancelling": "Cancelling..."
     },
     "upgrade": {
       "title": "Upgrade your plan",
       "subtitle": "Get more features by upgrading to a higher plan."
+    },
+    "details": {
+      "description": "Your current subscription details",
+      "activePlan": "Active subscription",
+      "accessUntil": "Access until",
+      "currentPeriod": "Current period",
+      "trialEnds": "Trial ends",
+      "cancelledOn": "Cancelled on",
+      "choosePlan": "Choose a plan to get started. Pick the Free plan to continue at no cost, or upgrade for more features.",
+      "reactivateNote": "You can reactivate your subscription before the access period ends.",
+      "reactivate": "Reactivate subscription",
+      "failedPortal": "Failed to open billing portal"
+    },
+    "success": {
+      "title": "Payment successful!",
+      "description": "Your subscription is now active. You'll be redirected to billing in a few seconds.",
+      "goToBilling": "Go to billing"
+    },
+    "cancelPage": {
+      "backToBilling": "Back to billing"
+    },
+    "featureGate": {
+      "notIncluded": "This feature is not included in your current plan.",
+      "openingPortal": "Opening portal...",
+      "upgradePlan": "Upgrade plan",
+      "availableIn": "Available in these plans:",
+      "upgrade": "Upgrade",
+      "failedPortal": "Failed to open billing portal"
+    },
+    "planCard": {
+      "mostPopular": "Most popular",
+      "trialDays": "{days}-day free trial",
+      "currentPlan": "Current plan",
+      "upgrade": "Upgrade",
+      "loading": "Loading...",
+      "getStarted": "Get started",
+      "failedCheckout": "Failed to start checkout"
+    },
+    "paywall": {
+      "logOut": "Log out",
+      "choosePlan": "Choose your plan",
+      "choosePlanSubtitle": "Select a plan to get started. You can change or cancel anytime."
+    },
+    "subscriptionStatus": {
+      "active": "Active",
+      "trialing": "Trial",
+      "cancelling": "Cancelling",
+      "cancelled": "Cancelled",
+      "pastDue": "Past due",
+      "unpaid": "Unpaid"
     }
   },
   "team": {
     "title": "Team",
+    "description": "Manage your team members and their permissions.",
     "invite": "Invite member",
     "inviteEmail": "Email address",
     "inviteRole": "Role",
@@ -155,7 +301,20 @@
     "invited": "Invited",
     "cancelInvite": "Cancel invitation",
     "cancelInviteConfirm": "Are you sure you want to cancel this invitation?",
-    "inviteCancelled": "Invitation cancelled."
+    "inviteCancelled": "Invitation cancelled.",
+    "memberCount": "Members ({count})",
+    "pendingCount": "{count} pending",
+    "removedMember": "{name} removed from team.",
+    "failedToRemove": "Failed to remove member",
+    "failedToCancelInvite": "Failed to cancel invitation",
+    "you": "(you)",
+    "removeMember": "Remove member",
+    "emailPlaceholder": "colleague@company.com",
+    "sending": "Sending...",
+    "management": {
+      "title": "Team Management",
+      "description": "Invite members, manage roles, and collaborate with your team."
+    }
   },
   "notifications": {
     "title": "Notifications",
@@ -172,7 +331,9 @@
     "welcome": {
       "title": "Welcome to {appName}!",
       "body": "We're glad you're here. Explore the dashboard to get started."
-    }
+    },
+    "unread": "{count} unread",
+    "markReadFailed": "Failed to mark notifications as read"
   },
   "legal": {
     "tos": { "title": "Terms of Service", "lastUpdated": "Last updated: January 2025" },
@@ -201,9 +362,23 @@
     "subtitle": "Join {tenantName} on {appName}",
     "accept": "Accept invitation",
     "expired": "This invitation has expired",
-    "alreadyMember": "You're already a member"
+    "alreadyMember": "You're already a member",
+    "joined": "You've joined the team!",
+    "failedToAccept": "Failed to accept invitation",
+    "goHome": "Go home",
+    "goToDashboard": "Go to dashboard",
+    "invitationFor": "Invitation for {email}",
+    "accepting": "Accepting...",
+    "signUpToAccept": "Sign up to accept",
+    "hasAccount": "Already have an account? Sign in"
   },
   "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account settings and preferences.",
+    "language": {
+      "label": "Language",
+      "toggleLabel": "Switch language"
+    },
     "appearance": {
       "title": "Appearance",
       "label": "Theme",
@@ -211,6 +386,51 @@
       "dark": "Dark",
       "system": "System",
       "toggleLabel": "Toggle theme"
+    },
+    "profile": {
+      "title": "Profile",
+      "description": "Update your personal information.",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "change": "Change",
+      "pendingEmail": "Pending change to {email} — check that inbox to confirm.",
+      "saving": "Saving...",
+      "saveChanges": "Save changes",
+      "saved": "Settings saved.",
+      "failedToSave": "Failed to save settings"
+    },
+    "email": {
+      "title": "Change email address",
+      "description": "We'll send a verification link to your new address.",
+      "newEmail": "New email",
+      "currentPassword": "Current password",
+      "sending": "Sending...",
+      "sendVerification": "Send verification",
+      "verificationSent": "Verification email sent to {email}. Check your inbox.",
+      "failedToInitiate": "Failed to initiate email change"
+    },
+    "danger": {
+      "title": "Danger zone",
+      "description": "Irreversible actions for your account.",
+      "deleteAccount": "Delete account",
+      "deleteDescription": "Permanently delete your account and all associated data.",
+      "contactSupport": "Please contact support to delete your account."
+    },
+    "cancelEmailChange": {
+      "loadingTitle": "Cancelling email change…",
+      "loadingDescription": "Please wait a moment.",
+      "successTitle": "Email change cancelled",
+      "successDescription": "Your email address has not been changed.",
+      "errorTitle": "Link invalid",
+      "errorDescription": "The link may have expired or already been used.",
+      "noToken": "No token provided.",
+      "failed": "Something went wrong."
+    },
+    "confirmEmail": {
+      "invalidLink": "Invalid confirmation link.",
+      "success": "Email updated successfully.",
+      "failed": "Confirmation failed."
     }
   },
   "errors": {
@@ -218,13 +438,31 @@
       "title": "Page not found",
       "description": "Sorry, we couldn't find the page you're looking for.",
       "goHome": "Go home",
-      "contactSupport": "Contact support"
+      "contactSupport": "Contact support",
+      "goToDashboard": "Go to Dashboard",
+      "description404": "The page you are looking for does not exist or has been moved."
     },
     "generic": {
       "title": "Something went wrong",
       "description": "An unexpected error occurred. Please try again or contact support if the problem persists.",
       "tryAgain": "Try again",
-      "goHome": "Go home"
+      "goHome": "Go home",
+      "errorId": "Error ID: {id}",
+      "goToDashboard": "Go to Dashboard"
     }
+  },
+  "footer": {
+    "tagline": "The fastest way to build and ship your SaaS product.",
+    "product": "Product",
+    "legal": "Legal",
+    "legalTos": "Terms of Service",
+    "legalPrivacy": "Privacy Policy",
+    "legalCookies": "Cookie Policy",
+    "support": "Support",
+    "contactUs": "Contact us",
+    "allRightsReserved": "All rights reserved.",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "cookies": "Cookies"
   }
 }
