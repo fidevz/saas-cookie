@@ -1,6 +1,7 @@
 """
 Production settings.
 """
+
 import logging
 
 import sentry_sdk
@@ -10,7 +11,7 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 
 from .base import *  # noqa: F401, F403
-from .base import SENTRY_DSN, APP_NAME
+from .base import APP_NAME, SENTRY_DSN
 
 # ---------------------------------------------------------------------------
 # Security

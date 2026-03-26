@@ -1,6 +1,7 @@
 """
 Tests for notification views.
 """
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import override_settings
@@ -13,7 +14,9 @@ from apps.notifications.models import Notification
 User = get_user_model()
 
 FEATURES_ON = {"FEATURE_FLAGS": {"TEAMS": True, "BILLING": True, "NOTIFICATIONS": True}}
-FEATURES_OFF = {"FEATURE_FLAGS": {"TEAMS": False, "BILLING": False, "NOTIFICATIONS": False}}
+FEATURES_OFF = {
+    "FEATURE_FLAGS": {"TEAMS": False, "BILLING": False, "NOTIFICATIONS": False}
+}
 
 
 def auth_client(user):
@@ -31,7 +34,9 @@ def user(db):
 @pytest.fixture
 def notifications(db, user):
     return [
-        Notification.objects.create(user=user, type="info", title=f"Notif {i}", body="body")
+        Notification.objects.create(
+            user=user, type="info", title=f"Notif {i}", body="body"
+        )
         for i in range(3)
     ]
 
@@ -142,7 +147,9 @@ class TestClearReadNotificationsView:
     @override_settings(**FEATURES_ON)
     def test_clear_read_deletes_only_read(self, user, notifications):
         # Mark 2 of 3 as read
-        Notification.objects.filter(pk__in=[notifications[0].pk, notifications[1].pk]).update(read=True)
+        Notification.objects.filter(
+            pk__in=[notifications[0].pk, notifications[1].pk]
+        ).update(read=True)
         client = auth_client(user)
         response = client.post(self.url)
         assert response.status_code == status.HTTP_200_OK
@@ -161,3 +168,33 @@ class TestClearReadNotificationsView:
     def test_unauthenticated_returns_401(self):
         response = APIClient().post(self.url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.django_db
+class TestCreateWebSocketTicketView:
+    url = "/api/v1/notifications/ws-ticket/"
+
+    @override_settings(**FEATURES_ON)
+    def test_authenticated_returns_ticket(self, user):
+        from django.core.cache import cache
+
+        client = auth_client(user)
+        response = client.post(self.url)
+        assert response.status_code == status.HTTP_200_OK
+        assert "ticket" in response.data
+        ticket = response.data["ticket"]
+        # Ticket must be stored in cache
+        cached = cache.get(f"ws_ticket:{ticket}")
+        assert cached is not None
+        assert cached["user_id"] == user.pk
+
+    @override_settings(**FEATURES_ON)
+    def test_unauthenticated_returns_401(self):
+        response = APIClient().post(self.url)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    @override_settings(**FEATURES_OFF)
+    def test_feature_disabled_returns_403(self, user):
+        client = auth_client(user)
+        response = client.post(self.url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN

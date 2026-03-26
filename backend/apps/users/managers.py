@@ -1,6 +1,7 @@
 """
 Custom manager for email-based authentication.
 """
+
 from django.contrib.auth.base_user import BaseUserManager
 
 

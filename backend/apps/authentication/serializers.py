@@ -1,8 +1,8 @@
 """
 Authentication serializers.
 """
+
 import logging
-import re
 
 from better_profanity import profanity
 from django.contrib.auth import authenticate, get_user_model
@@ -13,126 +13,495 @@ from rest_framework import serializers
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-RESERVED_SLUGS = frozenset({
-    # Existing
-    "www", "api", "app", "admin", "mail", "static", "media",
-    "dev", "staging", "prod", "help", "support", "blog", "status",
-    "dashboard", "billing", "auth", "invite",
-    # Infrastructure / DNS
-    "ns", "ns1", "ns2", "ns3", "ns4", "mx", "smtp", "imap", "pop", "pop3",
-    "ftp", "sftp", "ssh", "vpn", "dns", "cdn", "ssl", "tls",
-    "proxy", "gateway", "relay", "node", "server", "host", "hosting",
-    # Web / app services
-    "login", "signin", "signup", "register", "logout", "logoff",
-    "account", "accounts", "profile", "settings", "preferences",
-    "console", "portal", "panel", "cp", "webmail", "email", "calendar",
-    "password", "reset",
-    # Company / brand sensitive
-    "official", "secure", "security", "trust",
-    "verify", "verification", "confirm", "confirmation",
-    "noreply", "no-reply", "info", "contact", "sales",
-    "legal", "compliance", "abuse", "postmaster", "hostmaster", "webmaster",
-    "team", "company", "corporate",
-    # Payments / billing
-    "pay", "payment", "payments", "checkout",
-    "invoice", "invoices", "subscription", "subscriptions", "stripe",
-    # DevOps / monitoring / environments
-    "ci", "cd", "test", "testing", "debug",
-    "production", "demo", "sandbox", "preview", "internal",
-    "monitoring", "metrics", "grafana", "sentry", "logs", "logging",
-    "health", "ping", "uptime",
-    # Docs / marketing
-    "docs", "documentation", "wiki", "kb", "faq",
-    "news", "updates", "changelog", "roadmap",
-    "marketing", "promo", "landing", "home",
-    # API / protocols
-    "graphql", "grpc", "ws", "wss", "webhooks",
-    "oauth", "sso", "saml", "auth0",
-    "v1", "v2", "v3", "v4",
-    # Generic / reserved names
-    "root", "null", "undefined", "localhost", "local",
-    "default", "system", "tmp", "temp", "new",
-    # Phishing / impersonation risk
-    "customer-support", "helpdesk", "help-desk",
-    "customer-service", "customerservice",
-    "tech-support", "techsupport",
-    "account-security", "accountsecurity",
-    "account-verify", "account-verification",
-    "password-reset", "passwordreset",
-    "billing-support", "billing-help",
-    "payment-verify", "payment-verification",
-    "invoice-payment", "invoice-verify",
-    "signin-secure", "secure-login", "securelogin",
-    "login-verify", "verify-account",
-    "update-billing", "update-payment",
-    "suspended", "suspension", "restricted",
-    "alert", "alerts", "warning", "warnings", "notice", "notices",
-    "urgent", "critical", "important",
-    # Trust & safety / legal risk
-    "fraud", "chargeback", "dispute", "disputes",
-    "dmca", "copyright", "trademark",
-    "privacy", "terms", "tos", "gdpr", "ccpa",
-    "report", "reports", "reporting", "takedown",
-    "law", "lawyer", "attorney", "lawsuit",
-    "police", "law-enforcement",
-    # Infrastructure squatting / confusion
-    "assets", "asset", "files", "file", "uploads", "upload",
-    "images", "img", "js", "css",
-    "backup", "backups", "db", "database",
-    "cache", "queue", "worker", "workers",
-    "cron", "jobs", "job", "tasks", "task",
-    "storage", "store", "bucket", "buckets",
-    "config", "configs", "env", "envs", "secrets",
-    "deploy", "deployment", "deployments", "release", "releases",
-    "build", "builds", "pipeline", "pipelines",
-    # Third-party service names (impersonation)
-    "github", "gitlab", "bitbucket",
-    "slack", "discord", "teams", "zoom",
-    "google", "microsoft", "apple", "amazon", "aws",
-    "twilio", "sendgrid", "mailchimp", "mailgun", "resend",
-    "cloudflare", "fastly", "akamai",
-    "heroku", "vercel", "netlify", "render",
-    "datadog", "newrelic", "pagerduty", "opsgenie",
-    "jira", "confluence", "notion", "linear", "asana",
-    "intercom", "zendesk", "freshdesk",
-    "hubspot", "salesforce", "marketo",
-    "twitch", "youtube", "twitter", "facebook", "instagram", "linkedin",
-    # Business / org squatting
-    "enterprise", "business", "startup", "agency",
-    "partner", "partners", "partnership", "reseller", "resellers",
-    "affiliate", "affiliates", "referral", "referrals",
-    "investor", "investors", "press", "media",
-    "careers", "jobs", "hiring", "hr",
-    "about", "about-us", "aboutus",
-    "pricing", "plans", "upgrade",
-    "onboarding", "welcome", "getting-started",
-    "feedback", "survey", "surveys",
-    "forum", "forums", "community", "communities",
-    # Admin / ops confusion
-    "superadmin", "super-admin", "sysadmin", "sys-admin",
-    "root-admin", "god", "owner", "ops", "operations",
-    "devops", "infra", "infrastructure", "platform",
-    "engineering", "product", "design",
-    "ceo", "cto", "cfo", "coo",
-    # AI / ML
-    "ai", "ml", "llm", "nlp", "gpt",
-    "chatgpt", "openai", "anthropic", "claude", "gemini", "copilot",
-    "mistral", "llama", "deepseek", "perplexity", "cohere",
-    "huggingface", "replicate", "together",
-    "chat", "chatbot", "bot", "assistant", "agent", "agents",
-    "autopilot", "automate", "automation",
-    "neural", "model", "models", "inference", "training",
-    "embedding", "embeddings", "vector", "vectors",
-    "rag", "fine-tune", "finetune", "prompt", "prompts",
-    "ai-assistant", "ai-agent", "ai-chat", "ai-support",
-})
+RESERVED_SLUGS = frozenset(
+    {
+        # Existing
+        "www",
+        "api",
+        "app",
+        "admin",
+        "mail",
+        "static",
+        "media",
+        "dev",
+        "staging",
+        "prod",
+        "help",
+        "support",
+        "blog",
+        "status",
+        "dashboard",
+        "billing",
+        "auth",
+        "invite",
+        # Infrastructure / DNS
+        "ns",
+        "ns1",
+        "ns2",
+        "ns3",
+        "ns4",
+        "mx",
+        "smtp",
+        "imap",
+        "pop",
+        "pop3",
+        "ftp",
+        "sftp",
+        "ssh",
+        "vpn",
+        "dns",
+        "cdn",
+        "ssl",
+        "tls",
+        "proxy",
+        "gateway",
+        "relay",
+        "node",
+        "server",
+        "host",
+        "hosting",
+        # Web / app services
+        "login",
+        "signin",
+        "signup",
+        "register",
+        "logout",
+        "logoff",
+        "account",
+        "accounts",
+        "profile",
+        "settings",
+        "preferences",
+        "console",
+        "portal",
+        "panel",
+        "cp",
+        "webmail",
+        "email",
+        "calendar",
+        "password",
+        "reset",
+        # Company / brand sensitive
+        "official",
+        "secure",
+        "security",
+        "trust",
+        "verify",
+        "verification",
+        "confirm",
+        "confirmation",
+        "noreply",
+        "no-reply",
+        "info",
+        "contact",
+        "sales",
+        "legal",
+        "compliance",
+        "abuse",
+        "postmaster",
+        "hostmaster",
+        "webmaster",
+        "team",
+        "company",
+        "corporate",
+        # Payments / billing
+        "pay",
+        "payment",
+        "payments",
+        "checkout",
+        "invoice",
+        "invoices",
+        "subscription",
+        "subscriptions",
+        "stripe",
+        # DevOps / monitoring / environments
+        "ci",
+        "cd",
+        "test",
+        "testing",
+        "debug",
+        "production",
+        "demo",
+        "sandbox",
+        "preview",
+        "internal",
+        "monitoring",
+        "metrics",
+        "grafana",
+        "sentry",
+        "logs",
+        "logging",
+        "health",
+        "ping",
+        "uptime",
+        # Docs / marketing
+        "docs",
+        "documentation",
+        "wiki",
+        "kb",
+        "faq",
+        "news",
+        "updates",
+        "changelog",
+        "roadmap",
+        "marketing",
+        "promo",
+        "landing",
+        "home",
+        # API / protocols
+        "graphql",
+        "grpc",
+        "ws",
+        "wss",
+        "webhooks",
+        "oauth",
+        "sso",
+        "saml",
+        "auth0",
+        "v1",
+        "v2",
+        "v3",
+        "v4",
+        # Generic / reserved names
+        "root",
+        "null",
+        "undefined",
+        "localhost",
+        "local",
+        "default",
+        "system",
+        "tmp",
+        "temp",
+        "new",
+        # Phishing / impersonation risk
+        "customer-support",
+        "helpdesk",
+        "help-desk",
+        "customer-service",
+        "customerservice",
+        "tech-support",
+        "techsupport",
+        "account-security",
+        "accountsecurity",
+        "account-verify",
+        "account-verification",
+        "password-reset",
+        "passwordreset",
+        "billing-support",
+        "billing-help",
+        "payment-verify",
+        "payment-verification",
+        "invoice-payment",
+        "invoice-verify",
+        "signin-secure",
+        "secure-login",
+        "securelogin",
+        "login-verify",
+        "verify-account",
+        "update-billing",
+        "update-payment",
+        "suspended",
+        "suspension",
+        "restricted",
+        "alert",
+        "alerts",
+        "warning",
+        "warnings",
+        "notice",
+        "notices",
+        "urgent",
+        "critical",
+        "important",
+        # Trust & safety / legal risk
+        "fraud",
+        "chargeback",
+        "dispute",
+        "disputes",
+        "dmca",
+        "copyright",
+        "trademark",
+        "privacy",
+        "terms",
+        "tos",
+        "gdpr",
+        "ccpa",
+        "report",
+        "reports",
+        "reporting",
+        "takedown",
+        "law",
+        "lawyer",
+        "attorney",
+        "lawsuit",
+        "police",
+        "law-enforcement",
+        # Infrastructure squatting / confusion
+        "assets",
+        "asset",
+        "files",
+        "file",
+        "uploads",
+        "upload",
+        "images",
+        "img",
+        "js",
+        "css",
+        "backup",
+        "backups",
+        "db",
+        "database",
+        "cache",
+        "queue",
+        "worker",
+        "workers",
+        "cron",
+        "jobs",
+        "job",
+        "tasks",
+        "task",
+        "storage",
+        "store",
+        "bucket",
+        "buckets",
+        "config",
+        "configs",
+        "env",
+        "envs",
+        "secrets",
+        "deploy",
+        "deployment",
+        "deployments",
+        "release",
+        "releases",
+        "build",
+        "builds",
+        "pipeline",
+        "pipelines",
+        # Third-party service names (impersonation)
+        "github",
+        "gitlab",
+        "bitbucket",
+        "slack",
+        "discord",
+        "teams",
+        "zoom",
+        "google",
+        "microsoft",
+        "apple",
+        "amazon",
+        "aws",
+        "twilio",
+        "sendgrid",
+        "mailchimp",
+        "mailgun",
+        "resend",
+        "cloudflare",
+        "fastly",
+        "akamai",
+        "heroku",
+        "vercel",
+        "netlify",
+        "render",
+        "datadog",
+        "newrelic",
+        "pagerduty",
+        "opsgenie",
+        "jira",
+        "confluence",
+        "notion",
+        "linear",
+        "asana",
+        "intercom",
+        "zendesk",
+        "freshdesk",
+        "hubspot",
+        "salesforce",
+        "marketo",
+        "twitch",
+        "youtube",
+        "twitter",
+        "facebook",
+        "instagram",
+        "linkedin",
+        # Business / org squatting
+        "enterprise",
+        "business",
+        "startup",
+        "agency",
+        "partner",
+        "partners",
+        "partnership",
+        "reseller",
+        "resellers",
+        "affiliate",
+        "affiliates",
+        "referral",
+        "referrals",
+        "investor",
+        "investors",
+        "press",
+        "media",
+        "careers",
+        "jobs",
+        "hiring",
+        "hr",
+        "about",
+        "about-us",
+        "aboutus",
+        "pricing",
+        "plans",
+        "upgrade",
+        "onboarding",
+        "welcome",
+        "getting-started",
+        "feedback",
+        "survey",
+        "surveys",
+        "forum",
+        "forums",
+        "community",
+        "communities",
+        # Admin / ops confusion
+        "superadmin",
+        "super-admin",
+        "sysadmin",
+        "sys-admin",
+        "root-admin",
+        "god",
+        "owner",
+        "ops",
+        "operations",
+        "devops",
+        "infra",
+        "infrastructure",
+        "platform",
+        "engineering",
+        "product",
+        "design",
+        "ceo",
+        "cto",
+        "cfo",
+        "coo",
+        # AI / ML
+        "ai",
+        "ml",
+        "llm",
+        "nlp",
+        "gpt",
+        "chatgpt",
+        "openai",
+        "anthropic",
+        "claude",
+        "gemini",
+        "copilot",
+        "mistral",
+        "llama",
+        "deepseek",
+        "perplexity",
+        "cohere",
+        "huggingface",
+        "replicate",
+        "together",
+        "chat",
+        "chatbot",
+        "bot",
+        "assistant",
+        "agent",
+        "agents",
+        "autopilot",
+        "automate",
+        "automation",
+        "neural",
+        "model",
+        "models",
+        "inference",
+        "training",
+        "embedding",
+        "embeddings",
+        "vector",
+        "vectors",
+        "rag",
+        "fine-tune",
+        "finetune",
+        "prompt",
+        "prompts",
+        "ai-assistant",
+        "ai-agent",
+        "ai-chat",
+        "ai-support",
+        # Payment processors
+        "paypal",
+        "venmo",
+        "braintree",
+        "adyen",
+        "klarna",
+        "affirm",
+        "afterpay",
+        "wise",
+        "transferwise",
+        # Cloud providers
+        "azure",
+        "gcp",
+        "digitalocean",
+        "linode",
+        "hetzner",
+        "vultr",
+        "ovh",
+        # Dev tools / registries
+        "docker",
+        "kubernetes",
+        "k8s",
+        "terraform",
+        "jenkins",
+        "circleci",
+        "travisci",
+        "npm",
+        "pypi",
+        # Social / comms platforms
+        "telegram",
+        "whatsapp",
+        "signal",
+        "reddit",
+        "tiktok",
+        "snapchat",
+        "pinterest",
+        "medium",
+        # Financial / crypto
+        "bank",
+        "crypto",
+        "bitcoin",
+        "ethereum",
+        "wallet",
+        "exchange",
+        "finance",
+        "financial",
+        "invest",
+        "investing",
+        # Government / authority
+        "gov",
+        "government",
+        "irs",
+        "sec",
+        "fbi",
+        "fda",
+        # Misc / squatting
+        "example",
+        "sample",
+        "placeholder",
+        "live-chat",
+        "livechat",
+        "chat-support",
+    }
+)
 
 
 class RegisterSerializer(serializers.Serializer):
     """User registration — creates user + tenant, or joins via invite_token."""
 
     # Workspace fields — required only when not using an invite_token
-    company_name = serializers.CharField(max_length=200, min_length=2, required=False, allow_blank=True)
+    company_name = serializers.CharField(
+        max_length=200, min_length=2, required=False, allow_blank=True
+    )
     slug = serializers.RegexField(
         r"^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$",
         required=False,
@@ -157,7 +526,9 @@ class RegisterSerializer(serializers.Serializer):
     def validate_email(self, value: str) -> str:
         normalized = value.strip().lower()
         if User.objects.filter(email__iexact=normalized).exists():
-            raise serializers.ValidationError(_("A user with that email already exists."))
+            raise serializers.ValidationError(
+                _("A user with that email already exists.")
+            )
         return normalized
 
     def validate_password(self, value: str) -> str:
@@ -179,18 +550,33 @@ class RegisterSerializer(serializers.Serializer):
         invite_token = attrs.get("invite_token")
         if invite_token:
             from apps.teams.models import Invitation
+
             try:
-                invitation = Invitation.objects.select_related("tenant").get(token=invite_token)
+                invitation = Invitation.objects.select_related("tenant").get(
+                    token=invite_token
+                )
             except (Invitation.DoesNotExist, ValueError):
-                raise serializers.ValidationError({"invite_token": _("Invalid invitation token.")})
+                raise serializers.ValidationError(
+                    {"invite_token": _("Invalid invitation token.")}
+                )
             if not invitation.is_valid:
-                raise serializers.ValidationError({"invite_token": _("This invitation has expired or already been used.")})
+                raise serializers.ValidationError(
+                    {
+                        "invite_token": _(
+                            "This invitation has expired or already been used."
+                        )
+                    }
+                )
             attrs["_invitation"] = invitation
         else:
             if not attrs.get("company_name"):
-                raise serializers.ValidationError({"company_name": _("This field is required.")})
+                raise serializers.ValidationError(
+                    {"company_name": _("This field is required.")}
+                )
             if not attrs.get("slug"):
-                raise serializers.ValidationError({"slug": _("This field is required.")})
+                raise serializers.ValidationError(
+                    {"slug": _("This field is required.")}
+                )
         return attrs
 
     def create(self, validated_data: dict) -> tuple:
@@ -218,6 +604,7 @@ class RegisterSerializer(serializers.Serializer):
             )
             invitation.accepted = True
             from django.utils import timezone
+
             invitation.accepted_at = timezone.now()
             invitation.save(update_fields=["accepted", "accepted_at"])
             tenant = invitation.tenant
@@ -227,16 +614,23 @@ class RegisterSerializer(serializers.Serializer):
             slug = validated_data["slug"]
             tenant = Tenant.objects.create(name=company_name, slug=slug, owner=user)
             TenantMembership.objects.create(
-                user=user, tenant=tenant, role=TenantMembership.Role.ADMIN,
+                user=user,
+                tenant=tenant,
+                role=TenantMembership.Role.ADMIN,
             )
 
         # Invited users have already verified their email by clicking the link
         from allauth.account.models import EmailAddress
+
         request = self.context.get("request")
         if invitation:
-            EmailAddress.objects.create(user=user, email=email, primary=True, verified=True)
+            EmailAddress.objects.create(
+                user=user, email=email, primary=True, verified=True
+            )
         else:
-            ea = EmailAddress.objects.create(user=user, email=email, primary=True, verified=False)
+            ea = EmailAddress.objects.create(
+                user=user, email=email, primary=True, verified=False
+            )
             ea.send_confirmation(request, signup=True)
 
         logger.info("New user registered: %s (tenant: %s)", email, tenant.slug)

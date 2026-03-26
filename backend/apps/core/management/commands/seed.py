@@ -6,6 +6,7 @@ Creates initial data for local development:
   - Admin test user
   - Test tenant + admin membership
 """
+
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
@@ -83,7 +84,8 @@ class Command(BaseCommand):
             if plan_data["stripe_price_id"] is None:
                 # Free plan has no Stripe price — look up by name + zero amount
                 plan, created = Plan.objects.update_or_create(
-                    name=plan_data["name"], amount=0,
+                    name=plan_data["name"],
+                    amount=0,
                     defaults=plan_data,
                 )
             else:
@@ -108,13 +110,16 @@ class Command(BaseCommand):
         if created:
             user.set_password(TEST_USER_PASSWORD)
             user.save()
-            self.stdout.write(f"  Created user: {TEST_USER_EMAIL} / {TEST_USER_PASSWORD}")
+            self.stdout.write(
+                f"  Created user: {TEST_USER_EMAIL} / {TEST_USER_PASSWORD}"
+            )
         else:
             self.stdout.write(f"  User already exists: {TEST_USER_EMAIL}")
 
         # Ensure email is verified so the test user can log in when
         # ACCOUNT_EMAIL_VERIFICATION = "mandatory" is set.
         from allauth.account.models import EmailAddress
+
         EmailAddress.objects.get_or_create(
             user=user,
             email=user.email,

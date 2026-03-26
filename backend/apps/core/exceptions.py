@@ -7,6 +7,7 @@ Ensures all API errors are returned as JSON with a consistent shape:
 
 Never returns HTML, never exposes stack traces in production.
 """
+
 import logging
 
 from django.conf import settings
@@ -42,14 +43,18 @@ def custom_exception_handler(exc, context):
         )
 
     if status_code == status.HTTP_401_UNAUTHORIZED:
-        detail = _extract_detail(response.data, "Authentication credentials were not provided.")
+        detail = _extract_detail(
+            response.data, "Authentication credentials were not provided."
+        )
         return Response(
             {"error": "authentication_error", "detail": detail},
             status=status_code,
         )
 
     if status_code == status.HTTP_403_FORBIDDEN:
-        detail = _extract_detail(response.data, "You do not have permission to perform this action.")
+        detail = _extract_detail(
+            response.data, "You do not have permission to perform this action."
+        )
         return Response(
             {"error": "permission_denied", "detail": detail},
             status=status_code,

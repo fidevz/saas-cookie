@@ -1,6 +1,7 @@
 """
 Subscription views.
 """
+
 import logging
 
 import stripe
@@ -13,9 +14,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.features import FeatureFlags
-from apps.subscriptions.models import Plan, Subscription
+from apps.subscriptions.models import Plan, StripeWebhookEvent, Subscription
 from apps.subscriptions.serializers import PlanSerializer, SubscriptionSerializer
 from apps.subscriptions.webhooks import handle_webhook
+from utils.audit import log_action
 from utils.permissions import IsTenantAdmin
 
 logger = logging.getLogger(__name__)
@@ -50,7 +52,9 @@ class CurrentSubscriptionView(APIView):
             raise NotFound("No tenant context.")
 
         try:
-            subscription = Subscription.objects.select_related("plan").get(tenant=tenant)
+            subscription = Subscription.objects.select_related("plan").get(
+                tenant=tenant
+            )
         except Subscription.DoesNotExist:
             raise NotFound("No subscription found.")
 
@@ -113,8 +117,17 @@ class CreateCheckoutSessionView(APIView):
             session = stripe.checkout.Session.create(**session_params)
         except stripe.StripeError as exc:
             logger.error("Stripe checkout error: %s", exc)
-            raise ValidationError({"detail": "Payment processing failed. Please try again."})
+            raise ValidationError(
+                {"detail": "Payment processing failed. Please try again."}
+            )
 
+        log_action(
+            actor=request.user,
+            action="subscription.checkout_started",
+            target=plan.name,
+            metadata={"plan_id": plan.pk, "session_id": session.id},
+            tenant=tenant,
+        )
         return Response({"url": session.url, "session_id": session.id})
 
 
@@ -135,7 +148,9 @@ class CustomerPortalView(APIView):
             raise NotFound("No active subscription found.")
 
         if not subscription.stripe_customer_id:
-            raise ValidationError({"detail": "No Stripe customer associated with this tenant."})
+            raise ValidationError(
+                {"detail": "No Stripe customer associated with this tenant."}
+            )
 
         return_url = request.data.get(
             "return_url", f"https://{settings.BASE_DOMAIN}/billing/"
@@ -148,8 +163,16 @@ class CustomerPortalView(APIView):
             )
         except stripe.StripeError as exc:
             logger.error("Stripe portal error: %s", exc)
-            raise ValidationError({"detail": "Failed to open billing portal. Please try again."})
+            raise ValidationError(
+                {"detail": "Failed to open billing portal. Please try again."}
+            )
 
+        log_action(
+            actor=request.user,
+            action="subscription.portal_accessed",
+            target=subscription.stripe_customer_id,
+            tenant=tenant,
+        )
         return Response({"url": portal_session.url})
 
 
@@ -179,10 +202,20 @@ class CancelSubscriptionView(APIView):
             )
         except stripe.StripeError as exc:
             logger.error("Stripe cancel error: %s", exc)
-            raise ValidationError({"detail": "Failed to cancel subscription. Please try again."})
+            raise ValidationError(
+                {"detail": "Failed to cancel subscription. Please try again."}
+            )
 
         subscription.status = Subscription.Status.CANCELLING
         subscription.save(update_fields=["status", "updated_at"])
+
+        log_action(
+            actor=request.user,
+            action="subscription.cancelled",
+            target=subscription.stripe_subscription_id,
+            metadata={"source": "user_request"},
+            tenant=tenant,
+        )
 
         return Response({"detail": "Subscription will be cancelled at period end."})
 
@@ -212,7 +245,18 @@ class SelectFreePlanView(APIView):
             status=Subscription.Status.ACTIVE,
             capabilities=free_plan.capabilities,  # snapshot at subscription time
         )
-        return Response(SubscriptionSerializer(subscription).data, status=status.HTTP_201_CREATED)
+
+        log_action(
+            actor=request.user,
+            action="subscription.acquired",
+            target=free_plan.name,
+            metadata={"plan_id": free_plan.pk, "source": "free_plan_selection"},
+            tenant=tenant,
+        )
+
+        return Response(
+            SubscriptionSerializer(subscription).data, status=status.HTTP_201_CREATED
+        )
 
 
 class WebhookView(APIView):
@@ -237,7 +281,9 @@ class WebhookView(APIView):
             )
         else:
             try:
-                event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+                event = stripe.Webhook.construct_event(
+                    payload, sig_header, webhook_secret
+                )
             except stripe.error.SignatureVerificationError as exc:
                 logger.warning("Stripe signature verification failed: %s", exc)
                 return Response(
@@ -245,7 +291,17 @@ class WebhookView(APIView):
                 )
             except Exception as exc:
                 logger.error("Stripe webhook payload error: %s", exc)
-                return Response({"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST
+                )
+
+        _, created = StripeWebhookEvent.objects.get_or_create(
+            event_id=event["id"],
+            defaults={"event_type": event.get("type", "")},
+        )
+        if not created:
+            logger.info("Duplicate Stripe event %s, skipping", event["id"])
+            return Response({"received": True})
 
         try:
             handle_webhook(event)

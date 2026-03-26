@@ -12,6 +12,7 @@ Usage:
     python manage.py sync_stripe_plans           # live run
     python manage.py sync_stripe_plans --dry-run # preview without touching Stripe
 """
+
 import stripe
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -50,7 +51,11 @@ class Command(BaseCommand):
         stripe.api_key = settings.STRIPE_SECRET_KEY
 
         if dry_run:
-            self.stdout.write(self.style.WARNING("DRY RUN — no changes will be made to Stripe or the database.\n"))
+            self.stdout.write(
+                self.style.WARNING(
+                    "DRY RUN — no changes will be made to Stripe or the database.\n"
+                )
+            )
 
         plans = Plan.objects.filter(is_active=True).order_by("amount")
 
@@ -64,7 +69,9 @@ class Command(BaseCommand):
 
         for plan in plans:
             self.stdout.write(f"\n{'─' * 50}")
-            self.stdout.write(f"Plan: {self.style.MIGRATE_HEADING(plan.name)} (${plan.amount}/{plan.interval})")
+            self.stdout.write(
+                f"Plan: {self.style.MIGRATE_HEADING(plan.name)} (${plan.amount}/{plan.interval})"
+            )
 
             needs_product = _is_placeholder(plan.stripe_product_id)
             needs_price = _is_placeholder(plan.stripe_price_id)
@@ -76,7 +83,9 @@ class Command(BaseCommand):
             # ── 1. Product ────────────────────────────────────────────────────
             if needs_product:
                 if dry_run:
-                    self.stdout.write(f"  Would create Stripe product: name='{plan.name}'")
+                    self.stdout.write(
+                        f"  Would create Stripe product: name='{plan.name}'"
+                    )
                 else:
                     try:
                         product = stripe.Product.create(
@@ -87,7 +96,9 @@ class Command(BaseCommand):
                         self.stdout.write(f"  ✓ Created product: {product_id}")
                         changed = True
                     except stripe.StripeError as exc:
-                        self.stdout.write(self.style.ERROR(f"  ✗ Failed to create product: {exc}"))
+                        self.stdout.write(
+                            self.style.ERROR(f"  ✗ Failed to create product: {exc}")
+                        )
                         continue
             else:
                 self.stdout.write(f"  · Product OK: {product_id}")
@@ -102,7 +113,9 @@ class Command(BaseCommand):
                         + (f", trial={plan.trial_days}d" if plan.trial_days else "")
                     )
                 else:
-                    price_id = self._create_price(plan, product_id, expected_unit_amount)
+                    price_id = self._create_price(
+                        plan, product_id, expected_unit_amount
+                    )
                     if price_id is None:
                         continue
                     changed = True
@@ -115,7 +128,11 @@ class Command(BaseCommand):
                         live_price = stripe.Price.retrieve(price_id)
                         live_amount = live_price.unit_amount
                     except stripe.StripeError as exc:
-                        self.stdout.write(self.style.ERROR(f"  ✗ Could not fetch price from Stripe: {exc}"))
+                        self.stdout.write(
+                            self.style.ERROR(
+                                f"  ✗ Could not fetch price from Stripe: {exc}"
+                            )
+                        )
                         continue
 
                     if live_amount != expected_unit_amount:
@@ -125,7 +142,9 @@ class Command(BaseCommand):
                         )
                         updated_count += 1
                     else:
-                        self.stdout.write(f"  · Price OK: {price_id} ({live_amount} cents)")
+                        self.stdout.write(
+                            f"  · Price OK: {price_id} ({live_amount} cents)"
+                        )
                         skipped_count += 1
                     continue
                 else:
@@ -133,11 +152,17 @@ class Command(BaseCommand):
                         live_price = stripe.Price.retrieve(price_id)
                         live_amount = live_price.unit_amount
                     except stripe.StripeError as exc:
-                        self.stdout.write(self.style.ERROR(f"  ✗ Could not fetch price from Stripe: {exc}"))
+                        self.stdout.write(
+                            self.style.ERROR(
+                                f"  ✗ Could not fetch price from Stripe: {exc}"
+                            )
+                        )
                         continue
 
                     if live_amount == expected_unit_amount:
-                        self.stdout.write(f"  · Price OK: {price_id} ({live_amount} cents)")
+                        self.stdout.write(
+                            f"  · Price OK: {price_id} ({live_amount} cents)"
+                        )
                         skipped_count += 1
                         continue
 
@@ -145,7 +170,9 @@ class Command(BaseCommand):
                     self.stdout.write(
                         f"  ! Price mismatch: live={live_amount} cents, expected={expected_unit_amount} cents"
                     )
-                    new_price_id = self._create_price(plan, product_id, expected_unit_amount)
+                    new_price_id = self._create_price(
+                        plan, product_id, expected_unit_amount
+                    )
                     if new_price_id is None:
                         continue
                     price_id = new_price_id
@@ -156,7 +183,9 @@ class Command(BaseCommand):
             if changed:
                 plan.stripe_product_id = product_id
                 plan.stripe_price_id = price_id
-                plan.save(update_fields=["stripe_product_id", "stripe_price_id", "updated_at"])
+                plan.save(
+                    update_fields=["stripe_product_id", "stripe_price_id", "updated_at"]
+                )
                 self.stdout.write(self.style.SUCCESS("  ✓ Plan updated in database"))
 
         self.stdout.write(f"\n{'─' * 50}")
@@ -174,7 +203,9 @@ class Command(BaseCommand):
                 )
             )
 
-    def _create_price(self, plan: "Plan", product_id: str, unit_amount: int) -> str | None:
+    def _create_price(
+        self, plan: "Plan", product_id: str, unit_amount: int
+    ) -> str | None:
         price_params = {
             "product": product_id,
             "unit_amount": unit_amount,

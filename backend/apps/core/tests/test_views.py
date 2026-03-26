@@ -1,6 +1,7 @@
 """
 Tests for core app views: FeatureFlagsView and SupportView.
 """
+
 import pytest
 from django.test import override_settings
 from rest_framework import status

@@ -1,6 +1,7 @@
 """
 Tests for email verification enforcement in LoginView and ResendVerificationView.
 """
+
 import pytest
 from django.urls import reverse
 from rest_framework.test import APIClient

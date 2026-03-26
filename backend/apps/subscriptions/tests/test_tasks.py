@@ -1,6 +1,7 @@
 """
 Tests for subscription Celery tasks.
 """
+
 from unittest.mock import patch
 
 import pytest
@@ -20,13 +21,17 @@ def owner(db):
 
 @pytest.fixture
 def plan(db):
-    return Plan.objects.create(name="Pro", stripe_price_id="price_pro", amount=1000, currency="usd")
+    return Plan.objects.create(
+        name="Pro", stripe_price_id="price_pro", amount=1000, currency="usd"
+    )
 
 
 @pytest.fixture
 def tenant(owner):
     t = Tenant.objects.create(name="Acme", slug="acme", owner=owner)
-    TenantMembership.objects.create(user=owner, tenant=t, role=TenantMembership.Role.ADMIN)
+    TenantMembership.objects.create(
+        user=owner, tenant=t, role=TenantMembership.Role.ADMIN
+    )
     return t
 
 
@@ -42,12 +47,16 @@ def subscription(tenant, plan):
 @pytest.mark.django_db
 class TestSyncStripeCustomerEmail:
     @patch("stripe.Customer.modify")
-    def test_updates_stripe_customer_for_owned_tenant(self, mock_modify, subscription, owner):
+    def test_updates_stripe_customer_for_owned_tenant(
+        self, mock_modify, subscription, owner
+    ):
         sync_stripe_customer_email(owner.pk, "new@example.com")
         mock_modify.assert_called_once_with("cus_abc123", email="new@example.com")
 
     @patch("stripe.Customer.modify")
-    def test_skips_subscription_without_stripe_customer_id(self, mock_modify, owner, tenant, plan):
+    def test_skips_subscription_without_stripe_customer_id(
+        self, mock_modify, owner, tenant, plan
+    ):
         Subscription.objects.create(tenant=tenant, plan=plan, stripe_customer_id="")
         sync_stripe_customer_email(owner.pk, "new@example.com")
         mock_modify.assert_not_called()

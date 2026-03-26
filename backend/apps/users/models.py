@@ -1,6 +1,7 @@
 """
 Custom user model — email-based, no mandatory username.
 """
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 

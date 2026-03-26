@@ -1,6 +1,7 @@
 """
 Tests for Stripe webhook handlers.
 """
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -94,11 +95,7 @@ class TestInvoicePaid:
             "invoice.paid",
             {
                 "subscription": "sub_test123",
-                "lines": {
-                    "data": [
-                        {"period": {"start": now_ts, "end": future_ts}}
-                    ]
-                },
+                "lines": {"data": [{"period": {"start": now_ts, "end": future_ts}}]},
             },
         )
         handle_webhook(event)

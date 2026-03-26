@@ -1,6 +1,7 @@
 """
 Celery tasks for tenant management.
 """
+
 import logging
 from datetime import timedelta
 
@@ -30,9 +31,11 @@ def cleanup_unverified_tenants() -> None:
         "user_id", flat=True
     )
 
-    stale_tenants = Tenant.objects.filter(created_at__lt=cutoff).exclude(
-        owner_id__in=verified_owner_ids
-    ).select_related("owner")
+    stale_tenants = (
+        Tenant.objects.filter(created_at__lt=cutoff)
+        .exclude(owner_id__in=verified_owner_ids)
+        .select_related("owner")
+    )
 
     count = 0
     for tenant in stale_tenants:

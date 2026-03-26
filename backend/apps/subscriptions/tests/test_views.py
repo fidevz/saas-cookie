@@ -1,8 +1,9 @@
 """
 Tests for subscription views.
 """
+
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -81,7 +82,7 @@ class TestWebhookView:
     url = "/api/v1/subscriptions/webhook/"
 
     @override_settings(STRIPE_WEBHOOK_SECRET="")
-    def test_webhook_no_secret_processes_event(self, tenant):
+    def test_webhook_no_secret_returns_500(self, tenant):
         payload = json.dumps(
             {
                 "type": "customer.subscription.deleted",
@@ -91,7 +92,7 @@ class TestWebhookView:
         response = APIClient().post(
             self.url, data=payload, content_type="application/json"
         )
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
 
     @override_settings(STRIPE_WEBHOOK_SECRET="whsec_test")
     def test_webhook_invalid_signature_returns_400(self):
@@ -111,7 +112,9 @@ class TestCancelSubscriptionView:
 
     @override_settings(**FEATURES_ON)
     @patch("apps.subscriptions.views.stripe.Subscription.modify")
-    def test_cancel_without_tenant_context(self, mock_modify, owner, tenant, subscription):
+    def test_cancel_without_tenant_context(
+        self, mock_modify, owner, tenant, subscription
+    ):
         """Without tenant middleware, IsTenantAdmin returns 403."""
         client = auth_client(owner)
         response = client.post(self.url)

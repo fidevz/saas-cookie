@@ -1,9 +1,9 @@
-import apps.subscriptions.capabilities
 from django.db import migrations, models
+
+import apps.subscriptions.capabilities
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("subscriptions", "0002_alter_plan_stripe_price_id"),
     ]

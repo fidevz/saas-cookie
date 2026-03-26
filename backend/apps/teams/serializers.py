@@ -1,6 +1,7 @@
 """
 Team serializers.
 """
+
 from rest_framework import serializers
 
 from apps.teams.models import Invitation
@@ -32,7 +33,15 @@ class InvitationSerializer(serializers.ModelSerializer):
             "tenant",
             "created_at",
         ]
-        read_only_fields = ["id", "token", "expires_at", "accepted", "accepted_at", "tenant", "created_at"]
+        read_only_fields = [
+            "id",
+            "token",
+            "expires_at",
+            "accepted",
+            "accepted_at",
+            "tenant",
+            "created_at",
+        ]
 
     def validate_email(self, value: str) -> str:
         return value.strip().lower()

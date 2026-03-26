@@ -28,7 +28,11 @@ urlpatterns = [
         PasswordResetConfirmView.as_view(),
         name="password-reset-confirm",
     ),
-    path("resend-verification/", ResendVerificationView.as_view(), name="resend-verification"),
+    path(
+        "resend-verification/",
+        ResendVerificationView.as_view(),
+        name="resend-verification",
+    ),
     path("verify-email/", VerifyEmailView.as_view(), name="verify-email"),
     path("exchange-code/", ExchangeCodeView.as_view(), name="exchange-code"),
     path("check-slug/", CheckSlugView.as_view(), name="check-slug"),

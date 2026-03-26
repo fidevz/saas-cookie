@@ -1,6 +1,7 @@
 """
 TenantMiddleware — resolves the current tenant from the request subdomain.
 """
+
 import logging
 import re
 

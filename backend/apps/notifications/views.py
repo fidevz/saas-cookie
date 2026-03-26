@@ -1,6 +1,10 @@
 """
 Notification views.
 """
+
+import uuid
+
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.generics import ListAPIView
@@ -27,9 +31,8 @@ class ListNotificationsView(ListAPIView):
 
     def get_queryset(self):
         _require_feature()
-        return (
-            Notification.objects.filter(user=self.request.user)
-            .order_by("-created_at")
+        return Notification.objects.filter(user=self.request.user).order_by(
+            "-created_at"
         )
 
 
@@ -57,7 +60,9 @@ class MarkAllReadView(APIView):
 
     def post(self, request: Request) -> Response:
         _require_feature()
-        updated = Notification.objects.filter(user=request.user, read=False).update(read=True)
+        updated = Notification.objects.filter(user=request.user, read=False).update(
+            read=True
+        )
         return Response({"detail": f"{updated} notifications marked as read."})
 
 
@@ -83,5 +88,23 @@ class ClearReadNotificationsView(APIView):
 
     def post(self, request: Request) -> Response:
         _require_feature()
-        deleted_count, _ = Notification.objects.filter(user=request.user, read=True).delete()
+        deleted_count, _ = Notification.objects.filter(
+            user=request.user, read=True
+        ).delete()
         return Response({"detail": f"{deleted_count} read notifications cleared."})
+
+
+class CreateWebSocketTicketView(APIView):
+    """POST /api/v1/notifications/ws-ticket/ — mint a single-use WebSocket auth ticket.
+
+    Returns a short-lived UUID ticket (30s TTL) that the client passes as ?ticket=
+    in the WebSocket URL instead of a JWT token, preventing token leakage to server logs.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        _require_feature()
+        ticket = str(uuid.uuid4())
+        cache.set(f"ws_ticket:{ticket}", {"user_id": request.user.pk}, timeout=30)
+        return Response({"ticket": ticket})

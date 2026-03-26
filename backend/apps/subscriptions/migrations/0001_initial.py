@@ -5,55 +5,120 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('tenants', '0001_initial'),
+        ("tenants", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Plan',
+            name="Plan",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(max_length=100)),
-                ('stripe_price_id', models.CharField(max_length=255, unique=True)),
-                ('stripe_product_id', models.CharField(blank=True, default='', max_length=255)),
-                ('amount', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('currency', models.CharField(default='usd', max_length=3)),
-                ('interval', models.CharField(choices=[('month', 'Monthly'), ('year', 'Yearly')], default='month', max_length=10)),
-                ('trial_days', models.PositiveIntegerField(default=0)),
-                ('is_active', models.BooleanField(default=True)),
-                ('features', models.JSONField(blank=True, default=list)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("name", models.CharField(max_length=100)),
+                ("stripe_price_id", models.CharField(max_length=255, unique=True)),
+                (
+                    "stripe_product_id",
+                    models.CharField(blank=True, default="", max_length=255),
+                ),
+                ("amount", models.DecimalField(decimal_places=2, max_digits=10)),
+                ("currency", models.CharField(default="usd", max_length=3)),
+                (
+                    "interval",
+                    models.CharField(
+                        choices=[("month", "Monthly"), ("year", "Yearly")],
+                        default="month",
+                        max_length=10,
+                    ),
+                ),
+                ("trial_days", models.PositiveIntegerField(default=0)),
+                ("is_active", models.BooleanField(default=True)),
+                ("features", models.JSONField(blank=True, default=list)),
             ],
             options={
-                'verbose_name': 'Plan',
-                'verbose_name_plural': 'Plans',
-                'ordering': ['amount'],
+                "verbose_name": "Plan",
+                "verbose_name_plural": "Plans",
+                "ordering": ["amount"],
             },
         ),
         migrations.CreateModel(
-            name='Subscription',
+            name="Subscription",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('status', models.CharField(choices=[('trialing', 'Trialing'), ('active', 'Active'), ('cancelling', 'Cancelling (active until period end)'), ('cancelled', 'Cancelled'), ('past_due', 'Past Due'), ('unpaid', 'Unpaid')], default='trialing', max_length=20)),
-                ('stripe_subscription_id', models.CharField(blank=True, db_index=True, default='', max_length=255)),
-                ('stripe_customer_id', models.CharField(blank=True, db_index=True, default='', max_length=255)),
-                ('current_period_start', models.DateTimeField(blank=True, null=True)),
-                ('current_period_end', models.DateTimeField(blank=True, null=True)),
-                ('trial_end', models.DateTimeField(blank=True, null=True)),
-                ('cancelled_at', models.DateTimeField(blank=True, null=True)),
-                ('plan', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='subscriptions', to='subscriptions.plan')),
-                ('tenant', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='subscription', to='tenants.tenant')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("trialing", "Trialing"),
+                            ("active", "Active"),
+                            ("cancelling", "Cancelling (active until period end)"),
+                            ("cancelled", "Cancelled"),
+                            ("past_due", "Past Due"),
+                            ("unpaid", "Unpaid"),
+                        ],
+                        default="trialing",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "stripe_subscription_id",
+                    models.CharField(
+                        blank=True, db_index=True, default="", max_length=255
+                    ),
+                ),
+                (
+                    "stripe_customer_id",
+                    models.CharField(
+                        blank=True, db_index=True, default="", max_length=255
+                    ),
+                ),
+                ("current_period_start", models.DateTimeField(blank=True, null=True)),
+                ("current_period_end", models.DateTimeField(blank=True, null=True)),
+                ("trial_end", models.DateTimeField(blank=True, null=True)),
+                ("cancelled_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "plan",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="subscriptions",
+                        to="subscriptions.plan",
+                    ),
+                ),
+                (
+                    "tenant",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="subscription",
+                        to="tenants.tenant",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Subscription',
-                'verbose_name_plural': 'Subscriptions',
+                "verbose_name": "Subscription",
+                "verbose_name_plural": "Subscriptions",
             },
         ),
     ]

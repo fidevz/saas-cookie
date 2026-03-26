@@ -1,6 +1,7 @@
 """
 Tests for tenant periodic tasks.
 """
+
 import pytest
 from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
@@ -68,7 +69,9 @@ class TestCleanupUnverifiedTenants:
 
         # The unverified owner is also a member of the other tenant
         owner = make_user("member@example.com", verified=False)
-        TenantMembership.objects.create(user=owner, tenant=other_tenant, role=TenantMembership.Role.MEMBER)
+        TenantMembership.objects.create(
+            user=owner, tenant=other_tenant, role=TenantMembership.Role.MEMBER
+        )
         stale_tenant = make_tenant(owner, "stale-co", hours_old=72)
 
         cleanup_unverified_tenants()

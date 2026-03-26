@@ -25,6 +25,7 @@ SSH into the server and run the official installer:
 ```bash
 ssh root@YOUR_SERVER_IP
 
+# Optionally inspect the script first: curl -fsSL https://cdn.coollabs.io/coolify/install.sh | less
 curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
 ```
 

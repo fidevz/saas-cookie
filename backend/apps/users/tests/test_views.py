@@ -1,6 +1,7 @@
 """
 Tests for user profile views.
 """
+
 from unittest.mock import patch
 
 import pytest
@@ -81,7 +82,8 @@ class TestProfileView:
 
 
 def _make_email_change_token(user, new_email):
-    from apps.users.views import EMAIL_CHANGE_MAX_AGE, EMAIL_CHANGE_SALT
+    from apps.users.views import EMAIL_CHANGE_SALT
+
     return signing.dumps({"uid": user.pk, "email": new_email}, salt=EMAIL_CHANGE_SALT)
 
 
@@ -108,7 +110,9 @@ class TestEmailChangeConfirmStripeSync:
         token = _make_email_change_token(user, "confirmed@example.com")
 
         client = APIClient()
-        with override_settings(FEATURE_FLAGS={"TEAMS": True, "BILLING": False, "NOTIFICATIONS": True}):
+        with override_settings(
+            FEATURE_FLAGS={"TEAMS": True, "BILLING": False, "NOTIFICATIONS": True}
+        ):
             response = client.post(self.url, {"token": token})
 
         assert response.status_code == status.HTTP_200_OK

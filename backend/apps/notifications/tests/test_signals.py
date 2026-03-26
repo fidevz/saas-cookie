@@ -6,6 +6,7 @@ The welcome notification signal fires on `user_logged_in` when the user's
 does after a successful authentication) to test the signal in isolation
 without needing a full HTTP request through the auth stack.
 """
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.signals import user_logged_in
@@ -59,13 +60,17 @@ class TestWelcomeNotificationSignal:
     @override_settings(**_SETTINGS)
     def test_welcome_notification_title_contains_app_name(self, first_login_user):
         fire_login_signal(first_login_user)
-        notif = Notification.objects.get(user=first_login_user, type=Notification.Type.WELCOME)
+        notif = Notification.objects.get(
+            user=first_login_user, type=Notification.Type.WELCOME
+        )
         assert APP_NAME in notif.title
 
     @override_settings(**_SETTINGS)
     def test_welcome_notification_body_contains_user_name(self, first_login_user):
         fire_login_signal(first_login_user)
-        notif = Notification.objects.get(user=first_login_user, type=Notification.Type.WELCOME)
+        notif = Notification.objects.get(
+            user=first_login_user, type=Notification.Type.WELCOME
+        )
         assert first_login_user.first_name in notif.body
 
     @override_settings(**_SETTINGS)
@@ -112,7 +117,9 @@ class TestWelcomeNotificationViaLoginEndpoint:
             password="securepass123",
             first_name="Bob",
         )
-        EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+        EmailAddress.objects.create(
+            user=user, email=user.email, verified=True, primary=True
+        )
         assert user.is_first_login is True
 
         APIClient().post(
@@ -133,7 +140,9 @@ class TestWelcomeNotificationViaLoginEndpoint:
             email="apilogin2@example.com",
             password="securepass123",
         )
-        EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+        EmailAddress.objects.create(
+            user=user, email=user.email, verified=True, primary=True
+        )
         client = APIClient()
         credentials = {"email": "apilogin2@example.com", "password": "securepass123"}
         client.post("/api/v1/auth/login/", credentials)

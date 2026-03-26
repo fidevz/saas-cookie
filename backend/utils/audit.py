@@ -1,6 +1,7 @@
 """
 Audit logging helpers.
 """
+
 from __future__ import annotations
 
 import logging
@@ -13,6 +14,7 @@ def log_action(
     action: str,
     target: str = "",
     metadata: dict | None = None,
+    tenant=None,
 ) -> None:
     """
     Create an immutable AuditLog entry.
@@ -22,6 +24,7 @@ def log_action(
         action: Short action description, e.g. ``"user.login"``.
         target: Optional identifier for the affected object.
         metadata: Optional dict with additional context.
+        tenant: The tenant this action belongs to (or None for system actions).
     """
     from apps.core.models import AuditLog
 
@@ -31,6 +34,7 @@ def log_action(
             action=action,
             target=target,
             metadata=metadata or {},
+            tenant=tenant,
         )
     except Exception as exc:
         # Audit logging should never break the main flow

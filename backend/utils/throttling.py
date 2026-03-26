@@ -1,6 +1,7 @@
 """
 Custom DRF throttle classes for auth endpoints.
 """
+
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 

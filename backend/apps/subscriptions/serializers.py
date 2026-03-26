@@ -1,6 +1,7 @@
 """
 Subscription serializers.
 """
+
 from rest_framework import serializers
 
 from apps.subscriptions.models import Plan, Subscription

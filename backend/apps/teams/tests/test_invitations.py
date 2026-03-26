@@ -1,6 +1,7 @@
 """
 Tests for invitation creation and acceptance flow.
 """
+
 import uuid
 from datetime import timedelta
 from unittest.mock import patch
@@ -126,7 +127,9 @@ class TestAcceptInviteView:
         """The accepted membership must have the role specified in the invitation."""
         client = auth_client(invitee_user)
         client.post(self._accept_url(invitation.token))
-        membership = TenantMembership.objects.get(user=invitee_user, tenant=invitation.tenant)
+        membership = TenantMembership.objects.get(
+            user=invitee_user, tenant=invitation.tenant
+        )
         assert membership.role == invitation.role
 
     def test_accept_sets_accepted_at_timestamp(self, invitation, invitee_user):
@@ -154,7 +157,9 @@ class TestInviteMemberView:
             HTTP_HOST=TENANT_HOST,
         )
         assert response.status_code == status.HTTP_201_CREATED
-        assert Invitation.objects.filter(email="newperson@example.com", tenant=tenant).exists()
+        assert Invitation.objects.filter(
+            email="newperson@example.com", tenant=tenant
+        ).exists()
         mock_delay.assert_called_once()
 
     @patch("apps.teams.tasks.send_invitation_email.delay")
@@ -171,7 +176,9 @@ class TestInviteMemberView:
         mock_delay.assert_called_with(invitation.pk)
 
     @patch("apps.teams.tasks.send_invitation_email.delay")
-    def test_invite_already_member_returns_400(self, mock_delay, admin_user, invitee_user, tenant):
+    def test_invite_already_member_returns_400(
+        self, mock_delay, admin_user, invitee_user, tenant
+    ):
         TenantMembership.objects.create(user=invitee_user, tenant=tenant, role="member")
         client = auth_client(admin_user)
         response = client.post(
@@ -199,7 +206,9 @@ class TestInviteMemberView:
             HTTP_HOST=TENANT_HOST,
         )
         # Only the new invitation should exist
-        invitations = Invitation.objects.filter(email="pending@example.com", tenant=tenant)
+        invitations = Invitation.objects.filter(
+            email="pending@example.com", tenant=tenant
+        )
         assert invitations.count() == 1
         assert invitations.first().role == "admin"
 
@@ -228,7 +237,9 @@ class TestInviteMemberView:
         mock_delay.assert_not_called()
 
     def test_unauthenticated_returns_401(self):
-        response = APIClient().post(self.url, {"email": "x@example.com", "role": "member"})
+        response = APIClient().post(
+            self.url, {"email": "x@example.com", "role": "member"}
+        )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     @patch("apps.teams.tasks.send_invitation_email.delay")

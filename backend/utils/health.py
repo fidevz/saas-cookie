@@ -3,6 +3,7 @@ Health check URL configuration.
 
 Included at /health/ in the root URLconf.
 """
+
 from django.urls import path
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request

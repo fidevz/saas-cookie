@@ -1,6 +1,7 @@
 """
 Celery application configuration.
 """
+
 import os
 
 from celery import Celery
@@ -25,6 +26,10 @@ app.conf.beat_schedule = {
     "cleanup-unverified-tenants": {
         "task": "apps.tenants.tasks.cleanup_unverified_tenants",
         "schedule": crontab(hour="*/6"),  # Every 6 hours
+    },
+    "cleanup-old-audit-logs": {
+        "task": "apps.core.tasks.cleanup_old_audit_logs",
+        "schedule": crontab(hour=3, minute=0),  # Every day at 03:00 UTC
     },
 }
 

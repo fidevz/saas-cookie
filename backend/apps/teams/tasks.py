@@ -1,6 +1,7 @@
 """
 Celery tasks for team invitations.
 """
+
 import logging
 from urllib.parse import urlparse
 
@@ -18,6 +19,7 @@ def _tenant_invite_url(tenant_slug: str, token: str) -> str:
     if parsed.port:
         host = f"{host}:{parsed.port}"
     return f"{parsed.scheme}://{host}/invite/{token}"
+
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +63,11 @@ def send_invitation_email(self, invitation_id: int) -> None:
             html_body=html_body,
             text_body=text_body,
         )
-        logger.info("Invitation email sent to %s (invitation %s)", invitation.email, invitation_id)
+        logger.info(
+            "Invitation email sent to %s (invitation %s)",
+            invitation.email,
+            invitation_id,
+        )
     except Exception as exc:
         logger.warning("Failed to send invitation email: %s", exc)
         raise self.retry(exc=exc)

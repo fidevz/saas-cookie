@@ -1,6 +1,7 @@
 """
 Core app views: feature flags + support contact.
 """
+
 import html as html_lib
 import logging
 

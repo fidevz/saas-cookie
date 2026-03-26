@@ -1,3 +1,5 @@
+import { api } from "@/lib/api";
+
 const _wsUrl = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000";
 // Enforce encrypted WebSocket connections in production.
 if (process.env.NODE_ENV === "production" && _wsUrl.startsWith("ws://")) {
@@ -14,22 +16,21 @@ class WebSocketClient {
   private maxReconnectAttempts = 5;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private onMessageCallback: ((data: unknown) => void) | null = null;
-  private currentToken: string | null = null;
 
-  connect(token: string, onMessage: (data: unknown) => void): void {
+  async connect(onMessage: (data: unknown) => void): Promise<void> {
     if (this.ws?.readyState === WebSocket.OPEN) {
       return;
     }
 
-    this.currentToken = token;
     this.onMessageCallback = onMessage;
     this.reconnectAttempts = 0;
-    this.createConnection(token, onMessage);
+    await this.createConnection(onMessage);
   }
 
-  private createConnection(token: string, onMessage: (data: unknown) => void): void {
+  private async createConnection(onMessage: (data: unknown) => void): Promise<void> {
     try {
-      this.ws = new WebSocket(`${WS_BASE}/ws/notifications/?token=${encodeURIComponent(token)}`);
+      const { ticket } = await api.post<{ ticket: string }>("/notifications/ws-ticket/");
+      this.ws = new WebSocket(`${WS_BASE}/ws/notifications/?ticket=${ticket}`);
 
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
@@ -50,24 +51,25 @@ class WebSocketClient {
 
       this.ws.onclose = () => {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
-          this.reconnect(token, onMessage);
+          this.reconnect(onMessage);
         }
       };
     } catch {
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
-        this.reconnect(token, onMessage);
+        this.reconnect(onMessage);
       }
     }
   }
 
-  private reconnect(token: string, onMessage: (data: unknown) => void): void {
+  private reconnect(onMessage: (data: unknown) => void): void {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
     }
     this.reconnectAttempts += 1;
     const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30000);
     this.reconnectTimer = setTimeout(() => {
-      this.createConnection(token, onMessage);
+      // Each reconnect fetches a fresh ticket (tickets are single-use)
+      void this.createConnection(onMessage);
     }, delay);
   }
 
@@ -81,7 +83,6 @@ class WebSocketClient {
       this.ws.close();
       this.ws = null;
     }
-    this.currentToken = null;
     this.onMessageCallback = null;
   }
 

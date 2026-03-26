@@ -1,6 +1,7 @@
 """
 Celery tasks for subscriptions.
 """
+
 import logging
 from datetime import timedelta
 
@@ -19,9 +20,9 @@ def send_trial_ending_email(self, subscription_id: int) -> None:
     from utils.email import send_email
 
     try:
-        subscription = Subscription.objects.select_related(
-            "tenant__owner", "plan"
-        ).get(pk=subscription_id)
+        subscription = Subscription.objects.select_related("tenant__owner", "plan").get(
+            pk=subscription_id
+        )
     except Subscription.DoesNotExist:
         logger.error("Subscription %s not found", subscription_id)
         return
@@ -51,7 +52,9 @@ def send_trial_ending_email(self, subscription_id: int) -> None:
     text_body = render_to_string("subscriptions/email/trial_ending.txt", context)
 
     try:
-        send_email(to=owner.email, subject=subject, html_body=html_body, text_body=text_body)
+        send_email(
+            to=owner.email, subject=subject, html_body=html_body, text_body=text_body
+        )
         logger.info(
             "Trial ending email sent to %s for subscription %s",
             owner.email,
@@ -69,9 +72,9 @@ def send_payment_failed_email(self, subscription_id: int, amount: str = "") -> N
     from utils.email import send_email
 
     try:
-        subscription = Subscription.objects.select_related(
-            "tenant__owner", "plan"
-        ).get(pk=subscription_id)
+        subscription = Subscription.objects.select_related("tenant__owner", "plan").get(
+            pk=subscription_id
+        )
     except Subscription.DoesNotExist:
         logger.error("Subscription %s not found", subscription_id)
         return
@@ -92,7 +95,9 @@ def send_payment_failed_email(self, subscription_id: int, amount: str = "") -> N
     text_body = render_to_string("subscriptions/email/payment_failed.txt", context)
 
     try:
-        send_email(to=owner.email, subject=subject, html_body=html_body, text_body=text_body)
+        send_email(
+            to=owner.email, subject=subject, html_body=html_body, text_body=text_body
+        )
         logger.info(
             "Payment failed email sent to %s for subscription %s",
             owner.email,
@@ -107,6 +112,7 @@ def send_payment_failed_email(self, subscription_id: int, amount: str = "") -> N
 def sync_stripe_customer_email(self, user_id: int, new_email: str) -> None:
     """Update Stripe customer email for all tenants owned by this user."""
     import stripe
+
     from apps.subscriptions.models import Subscription
 
     stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -114,16 +120,32 @@ def sync_stripe_customer_email(self, user_id: int, new_email: str) -> None:
     customer_ids = list(
         Subscription.objects.filter(
             tenant__owner_id=user_id,
-        ).exclude(stripe_customer_id="").values_list("stripe_customer_id", flat=True)
+        )
+        .exclude(stripe_customer_id="")
+        .values_list("stripe_customer_id", flat=True)
     )
 
     for customer_id in customer_ids:
         try:
             stripe.Customer.modify(customer_id, email=new_email)
-            logger.info("Updated Stripe customer %s email to %s", customer_id, new_email)
+            logger.info(
+                "Updated Stripe customer %s email to %s", customer_id, new_email
+            )
         except stripe.StripeError as exc:
-            logger.warning("Failed to update Stripe customer %s email: %s", customer_id, exc)
+            logger.warning(
+                "Failed to update Stripe customer %s email: %s", customer_id, exc
+            )
             raise self.retry(exc=exc)
+
+
+@shared_task
+def cleanup_old_webhook_events(days: int = 90) -> None:
+    """Delete processed Stripe webhook event records older than `days` to prevent table bloat."""
+    from apps.subscriptions.models import StripeWebhookEvent
+
+    cutoff = timezone.now() - timedelta(days=days)
+    count, _ = StripeWebhookEvent.objects.filter(created_at__lt=cutoff).delete()
+    logger.info("Deleted %d webhook events older than %d days", count, days)
 
 
 @shared_task

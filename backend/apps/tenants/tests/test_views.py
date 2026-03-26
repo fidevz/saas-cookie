@@ -1,6 +1,7 @@
 """
 Tests for tenant views.
 """
+
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -50,7 +51,9 @@ def admin_membership(db, owner, tenant):
 
 @pytest.fixture
 def member_membership(db, member_user, tenant):
-    return TenantMembership.objects.create(user=member_user, tenant=tenant, role="member")
+    return TenantMembership.objects.create(
+        user=member_user, tenant=tenant, role="member"
+    )
 
 
 @pytest.mark.django_db

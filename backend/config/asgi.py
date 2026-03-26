@@ -1,6 +1,7 @@
 """
 ASGI configuration for Channels + Django.
 """
+
 import os
 
 from channels.auth import AuthMiddlewareStack

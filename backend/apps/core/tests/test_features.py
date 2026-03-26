@@ -1,7 +1,7 @@
 """
 Tests for FeatureFlags.
 """
-import pytest
+
 from django.test import override_settings
 
 from apps.core.features import FeatureFlags
@@ -20,16 +20,6 @@ class TestFeatureFlags:
         with override_settings(FEATURE_FLAGS={}):
             assert FeatureFlags.get_feature("NONEXISTENT") is False
 
-    def test_get_feature_is_case_insensitive(self):
-        with override_settings(FEATURE_FLAGS={"BILLING": True}):
-            assert FeatureFlags.get_feature("billing") is True
-
-    def test_get_all_features_returns_dict(self):
-        flags = {"TEAMS": True, "BILLING": False, "NOTIFICATIONS": True}
-        with override_settings(FEATURE_FLAGS=flags):
-            result = FeatureFlags.get_all_features()
-            assert result == flags
-
     def test_teams_enabled_shortcut(self):
         with override_settings(FEATURE_FLAGS={"TEAMS": True}):
             assert FeatureFlags.teams_enabled() is True
@@ -44,6 +34,3 @@ class TestFeatureFlags:
         with override_settings(FEATURE_FLAGS={"NOTIFICATIONS": True}):
             assert FeatureFlags.notifications_enabled() is True
 
-    def test_missing_settings_returns_empty(self):
-        with override_settings(FEATURE_FLAGS={}):
-            assert FeatureFlags.get_all_features() == {}

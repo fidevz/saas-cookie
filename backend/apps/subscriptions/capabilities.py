@@ -48,7 +48,11 @@ def validate_capabilities(capabilities: dict) -> list[str]:
             errors.append(
                 f"Capability '{key}' must be a boolean, got {type(value).__name__}."
             )
-        elif expected_type == "integer" and value is not None and not isinstance(value, int):
+        elif (
+            expected_type == "integer"
+            and value is not None
+            and not isinstance(value, int)
+        ):
             errors.append(
                 f"Capability '{key}' must be an integer or null, got {type(value).__name__}."
             )

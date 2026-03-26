@@ -4,6 +4,7 @@ Optional subscription paywall middleware.
 Active only when FEATURE_REQUIRE_SUBSCRIPTION=True.
 Returns HTTP 402 for authenticated requests to tenants without an active subscription.
 """
+
 import json
 
 from django.http import HttpResponse
@@ -39,10 +40,12 @@ class SubscriptionPaywallMiddleware:
 
     def __call__(self, request):
         if self._should_block(request):
-            body = json.dumps({
-                "code": "subscription_required",
-                "detail": "An active subscription is required to use this feature.",
-            })
+            body = json.dumps(
+                {
+                    "code": "subscription_required",
+                    "detail": "An active subscription is required to use this feature.",
+                }
+            )
             return HttpResponse(body, status=402, content_type="application/json")
 
         return self.get_response(request)
@@ -72,6 +75,7 @@ class SubscriptionPaywallMiddleware:
 
         # Check for active subscription
         from apps.subscriptions.models import Subscription
+
         has_active = Subscription.objects.filter(
             tenant=tenant,
             status__in=[

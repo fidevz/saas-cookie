@@ -5,8 +5,9 @@ Overrides email confirmation URL generation to point to the Next.js frontend
 instead of trying to reverse Django URL patterns (which don't exist in this
 API-only backend).
 """
-from django.conf import settings
+
 from allauth.account.adapter import DefaultAccountAdapter
+from django.conf import settings
 
 
 class FrontendAccountAdapter(DefaultAccountAdapter):
@@ -24,6 +25,7 @@ class FrontendAccountAdapter(DefaultAccountAdapter):
         """
         from django.contrib.sites.models import Site
         from django.template.loader import render_to_string
+
         from utils.email import send_email
 
         activate_url = self.get_email_confirmation_url(request, emailconfirmation)
@@ -34,7 +36,9 @@ class FrontendAccountAdapter(DefaultAccountAdapter):
         try:
             current_site = Site.objects.get_current(request)
         except Exception:
-            current_site = type("_Site", (), {"name": app_name, "domain": settings.BASE_DOMAIN})()
+            current_site = type(
+                "_Site", (), {"name": app_name, "domain": settings.BASE_DOMAIN}
+            )()
 
         template_prefix = (
             "account/email/email_confirmation_signup_message"

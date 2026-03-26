@@ -80,7 +80,7 @@ export default function ProtectedLayout({
       // Connect WebSocket
       const { flags } = useFeatureStore.getState();
       if (flags.NOTIFICATIONS) {
-        connectWebSocket(accessToken);
+        connectWebSocket();
       }
 
       return () => {

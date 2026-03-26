@@ -1,10 +1,13 @@
 """
 Stripe webhook event handlers.
 """
+
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from django.utils import timezone as django_timezone
+
+from utils.audit import log_action
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +16,7 @@ def _dt(ts) -> datetime | None:
     """Convert a Stripe Unix timestamp to a timezone-aware datetime."""
     if ts is None:
         return None
-    return datetime.fromtimestamp(ts, tz=timezone.utc)
+    return datetime.fromtimestamp(ts, tz=UTC)
 
 
 def handle_webhook(event: dict) -> None:
@@ -99,12 +102,29 @@ def _handle_checkout_completed(session: dict) -> None:
         subscription.trial_end = trial_end
     subscription.save(
         update_fields=[
-            "stripe_subscription_id", "stripe_customer_id", "status", "plan",
-            "capabilities", "current_period_start", "current_period_end", "trial_end",
+            "stripe_subscription_id",
+            "stripe_customer_id",
+            "status",
+            "plan",
+            "capabilities",
+            "current_period_start",
+            "current_period_end",
+            "trial_end",
             "updated_at",
         ]
     )
     logger.info("Checkout completed for tenant %s", tenant.slug)
+    log_action(
+        actor=None,
+        action="subscription.acquired",
+        target=tenant.slug,
+        metadata={
+            "source": "stripe_webhook",
+            "plan_id": str(plan.pk) if plan else None,
+            "stripe_subscription_id": stripe_subscription_id,
+        },
+        tenant=tenant,
+    )
 
 
 def _handle_invoice_paid(invoice: dict) -> None:
@@ -115,9 +135,13 @@ def _handle_invoice_paid(invoice: dict) -> None:
         return
 
     try:
-        subscription = Subscription.objects.get(stripe_subscription_id=stripe_subscription_id)
+        subscription = Subscription.objects.get(
+            stripe_subscription_id=stripe_subscription_id
+        )
     except Subscription.DoesNotExist:
-        logger.warning("invoice.paid: subscription %s not found", stripe_subscription_id)
+        logger.warning(
+            "invoice.paid: subscription %s not found", stripe_subscription_id
+        )
         return
 
     lines = invoice.get("lines", {}).get("data", [])
@@ -131,9 +155,21 @@ def _handle_invoice_paid(invoice: dict) -> None:
     subscription.current_period_start = period_start
     subscription.current_period_end = period_end
     subscription.save(
-        update_fields=["status", "current_period_start", "current_period_end", "updated_at"]
+        update_fields=[
+            "status",
+            "current_period_start",
+            "current_period_end",
+            "updated_at",
+        ]
     )
     logger.info("Invoice paid for subscription %s", stripe_subscription_id)
+    log_action(
+        actor=None,
+        action="subscription.payment_succeeded",
+        target=stripe_subscription_id,
+        metadata={"source": "stripe_webhook"},
+        tenant=subscription.tenant,
+    )
 
 
 def _handle_invoice_payment_failed(invoice: dict) -> None:
@@ -145,9 +181,13 @@ def _handle_invoice_payment_failed(invoice: dict) -> None:
         return
 
     try:
-        subscription = Subscription.objects.get(stripe_subscription_id=stripe_subscription_id)
+        subscription = Subscription.objects.get(
+            stripe_subscription_id=stripe_subscription_id
+        )
     except Subscription.DoesNotExist:
-        logger.warning("invoice.payment_failed: subscription %s not found", stripe_subscription_id)
+        logger.warning(
+            "invoice.payment_failed: subscription %s not found", stripe_subscription_id
+        )
         return
 
     # Format amount from Stripe's integer cents
@@ -158,6 +198,13 @@ def _handle_invoice_payment_failed(invoice: dict) -> None:
     subscription.status = Subscription.Status.PAST_DUE
     subscription.save(update_fields=["status", "updated_at"])
     logger.info("Payment failed for subscription %s", stripe_subscription_id)
+    log_action(
+        actor=None,
+        action="subscription.payment_failed",
+        target=stripe_subscription_id,
+        metadata={"source": "stripe_webhook", "amount": amount_str},
+        tenant=subscription.tenant,
+    )
 
     # Dispatch dunning email asynchronously
     send_payment_failed_email.delay(subscription.pk, amount=amount_str)
@@ -171,7 +218,9 @@ def _handle_subscription_updated(stripe_sub: dict) -> None:
         return
 
     try:
-        subscription = Subscription.objects.get(stripe_subscription_id=stripe_subscription_id)
+        subscription = Subscription.objects.select_related("tenant").get(
+            stripe_subscription_id=stripe_subscription_id
+        )
     except Subscription.DoesNotExist:
         logger.warning("subscription.updated: %s not found", stripe_subscription_id)
         return
@@ -206,7 +255,16 @@ def _handle_subscription_updated(stripe_sub: dict) -> None:
             "updated_at",
         ]
     )
-    logger.info("Subscription %s updated: status=%s", stripe_subscription_id, new_status)
+    logger.info(
+        "Subscription %s updated: status=%s", stripe_subscription_id, new_status
+    )
+    log_action(
+        actor=None,
+        action="subscription.upgraded",
+        target=stripe_subscription_id,
+        metadata={"source": "stripe_webhook", "new_status": new_status},
+        tenant=subscription.tenant,
+    )
 
 
 def _handle_subscription_deleted(stripe_sub: dict) -> None:
@@ -217,7 +275,9 @@ def _handle_subscription_deleted(stripe_sub: dict) -> None:
         return
 
     try:
-        subscription = Subscription.objects.get(stripe_subscription_id=stripe_subscription_id)
+        subscription = Subscription.objects.select_related("tenant").get(
+            stripe_subscription_id=stripe_subscription_id
+        )
     except Subscription.DoesNotExist:
         logger.warning("subscription.deleted: %s not found", stripe_subscription_id)
         return
@@ -226,3 +286,10 @@ def _handle_subscription_deleted(stripe_sub: dict) -> None:
     subscription.cancelled_at = django_timezone.now()
     subscription.save(update_fields=["status", "cancelled_at", "updated_at"])
     logger.info("Subscription %s cancelled", stripe_subscription_id)
+    log_action(
+        actor=None,
+        action="subscription.cancelled",
+        target=stripe_subscription_id,
+        metadata={"source": "stripe_webhook"},
+        tenant=subscription.tenant,
+    )

@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('subscriptions', '0001_initial'),
+        ("subscriptions", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='plan',
-            name='stripe_price_id',
-            field=models.CharField(blank=True, default=None, max_length=255, null=True, unique=True),
+            model_name="plan",
+            name="stripe_price_id",
+            field=models.CharField(
+                blank=True, default=None, max_length=255, null=True, unique=True
+            ),
         ),
     ]

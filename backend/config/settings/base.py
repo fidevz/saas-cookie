@@ -1,6 +1,7 @@
 """
 Base settings shared across all environments.
 """
+
 from datetime import timedelta
 from pathlib import Path
 
@@ -112,11 +113,11 @@ ASGI_APPLICATION = "config.asgi.application"
 # ---------------------------------------------------------------------------
 import dj_database_url  # noqa: E402
 
-DATABASE_URL = config("DATABASE_URL", default="postgres://localhost:5432/saas_boilerplate")
+DATABASE_URL = config(
+    "DATABASE_URL", default="postgres://localhost:5432/saas_boilerplate"
+)
 
-DATABASES = {
-    "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
-}
+DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -126,7 +127,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.CustomUser"
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -329,6 +332,9 @@ CHANNEL_LAYERS = {
     },
 }
 
+# Maximum concurrent WebSocket connections per user. Prevents resource exhaustion.
+WS_MAX_CONNECTIONS_PER_USER = 15
+
 # ---------------------------------------------------------------------------
 # Email
 # ---------------------------------------------------------------------------
@@ -360,7 +366,9 @@ FEATURE_FLAGS = {
     "TEAMS": config("FEATURE_TEAMS", default=True, cast=bool),
     "BILLING": config("FEATURE_BILLING", default=True, cast=bool),
     "NOTIFICATIONS": config("FEATURE_NOTIFICATIONS", default=True, cast=bool),
-    "REQUIRE_SUBSCRIPTION": config("FEATURE_REQUIRE_SUBSCRIPTION", default=False, cast=bool),
+    "REQUIRE_SUBSCRIPTION": config(
+        "FEATURE_REQUIRE_SUBSCRIPTION", default=False, cast=bool
+    ),
 }
 
 # ---------------------------------------------------------------------------
@@ -400,7 +408,7 @@ if USE_S3:
     AWS_S3_CUSTOM_DOMAIN = config("MINIO_PUBLIC_URL", default="")
     AWS_DEFAULT_ACL = "private"
     AWS_S3_FILE_OVERWRITE = False
-    AWS_QUERYSTRING_AUTH = True   # serve files via pre-signed URLs
+    AWS_QUERYSTRING_AUTH = True  # serve files via pre-signed URLs
     AWS_QUERYSTRING_EXPIRE = 3600  # pre-signed URLs valid for 1 hour
 
     STORAGES = {

@@ -1,8 +1,8 @@
 """
 pytest configuration and shared fixtures.
 """
+
 import pytest
-from django.conf import settings
 
 
 @pytest.fixture(autouse=True)
@@ -22,6 +22,7 @@ def clear_throttle_cache():
     carry over between tests when they all share the same test IP address.
     """
     from django.core.cache import cache
+
     cache.clear()
     yield
     cache.clear()
@@ -36,6 +37,7 @@ def close_db_connections_after_test():
     """
     yield
     from django.db import connections
+
     connections.close_all()
 
 

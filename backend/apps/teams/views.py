@@ -1,6 +1,7 @@
 """
 Team management views.
 """
+
 import logging
 
 from django.db import transaction
@@ -21,7 +22,13 @@ from apps.teams.serializers import (
     UpdateMemberRoleSerializer,
 )
 from apps.tenants.models import TenantMembership
-from utils.permissions import HasPlanCapability, IsTenantAdmin, IsTenantMember, WithinPlanLimit
+from utils.audit import log_action
+from utils.permissions import (
+    HasPlanCapability,
+    IsTenantAdmin,
+    IsTenantMember,
+    WithinPlanLimit,
+)
 
 _count_members = lambda tenant: TenantMembership.objects.filter(tenant=tenant).count()  # noqa: E731
 
@@ -72,7 +79,17 @@ class InviteMemberView(APIView):
 
         send_invitation_email.delay(invitation.pk)
 
-        return Response(InvitationSerializer(invitation).data, status=status.HTTP_201_CREATED)
+        log_action(
+            actor=request.user,
+            action="user.invited",
+            target=email,
+            metadata={"invitation_id": invitation.pk, "role": invitation.role},
+            tenant=tenant,
+        )
+
+        return Response(
+            InvitationSerializer(invitation).data, status=status.HTTP_201_CREATED
+        )
 
 
 class GetInvitationView(APIView):
@@ -96,7 +113,10 @@ class GetInvitationView(APIView):
 
         return Response(
             {
-                "tenant": {"name": invitation.tenant.name, "slug": invitation.tenant.slug},
+                "tenant": {
+                    "name": invitation.tenant.name,
+                    "slug": invitation.tenant.slug,
+                },
                 "role": invitation.role,
                 "email": invitation.email,
                 "is_valid": True,
@@ -134,7 +154,41 @@ class AcceptInviteView(APIView):
             )
 
         if request.user.email.lower() != invitation.email.lower():
-            raise PermissionDenied("This invitation was sent to a different email address.")
+            raise PermissionDenied(
+                "This invitation was sent to a different email address."
+            )
+
+        # Enforce plan limits at accept time — the invite may have been sent on a
+        # higher plan, or the tenant may have downgraded since the invite was sent.
+        # Only applies to new memberships; role updates on existing members skip this.
+        _tenant = invitation.tenant
+        if not TenantMembership.objects.filter(
+            tenant=_tenant, user=request.user
+        ).exists():
+            from apps.subscriptions.models import Subscription
+
+            try:
+                _sub = Subscription.objects.select_related("plan").get(tenant=_tenant)
+                if _sub.is_active:
+                    _caps = _sub.capabilities or (
+                        _sub.plan.capabilities if _sub.plan else {}
+                    )
+                    if not _caps.get("teams"):
+                        raise PermissionDenied(
+                            "The tenant's plan does not include team management."
+                        )
+                    _limit = _caps.get("team_members")
+                    if _limit is not None and _count_members(_tenant) >= _limit:
+                        raise PermissionDenied(
+                            {
+                                "code": "plan_limit_exceeded",
+                                "capability": "team_members",
+                                "limit": _limit,
+                                "current": _count_members(_tenant),
+                            }
+                        )
+            except Subscription.DoesNotExist:
+                pass  # No subscription = no billing restrictions
 
         # Create membership (or update role if already a member via different means)
         membership, created = TenantMembership.objects.get_or_create(
@@ -149,6 +203,14 @@ class AcceptInviteView(APIView):
         invitation.accepted = True
         invitation.accepted_at = timezone.now()
         invitation.save(update_fields=["accepted", "accepted_at"])
+
+        log_action(
+            actor=request.user,
+            action="invitation.accepted",
+            target=invitation.tenant.slug,
+            metadata={"role": membership.role},
+            tenant=invitation.tenant,
+        )
 
         return Response(
             {
@@ -169,7 +231,9 @@ class ListInvitationsView(ListAPIView):
         _require_feature("TEAMS")
         tenant = _require_tenant(self.request)
         return (
-            Invitation.objects.filter(tenant=tenant, accepted=False, expires_at__gt=timezone.now())
+            Invitation.objects.filter(
+                tenant=tenant, accepted=False, expires_at__gt=timezone.now()
+            )
             .select_related("tenant", "invited_by")
             .order_by("-created_at")
         )
@@ -187,7 +251,15 @@ class CancelInvitationView(APIView):
             invitation = Invitation.objects.get(pk=pk, tenant=tenant, accepted=False)
         except Invitation.DoesNotExist:
             raise NotFound("Invitation not found.")
+        invited_email = invitation.email
         invitation.delete()
+        log_action(
+            actor=request.user,
+            action="invitation.cancelled",
+            target=invited_email,
+            metadata={"invitation_id": pk},
+            tenant=tenant,
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -222,10 +294,14 @@ class UpdateMemberRoleView(APIView):
             raise NotFound("Member not found.")
 
         new_role = request.data.get("role")
+        old_role = membership.role
         # Prevent removing the last admin — use select_for_update inside a
         # transaction to avoid a race condition where two concurrent requests
         # could both pass the count check and both demote the last admin.
-        if membership.role == TenantMembership.Role.ADMIN and new_role != TenantMembership.Role.ADMIN:
+        if (
+            membership.role == TenantMembership.Role.ADMIN
+            and new_role != TenantMembership.Role.ADMIN
+        ):
             with transaction.atomic():
                 admin_count = (
                     TenantMembership.objects.select_for_update()
@@ -233,15 +309,28 @@ class UpdateMemberRoleView(APIView):
                     .count()
                 )
                 if admin_count <= 1:
-                    raise ValidationError("Cannot remove the last admin from the tenant.")
-                serializer = UpdateMemberRoleSerializer(membership, data=request.data, partial=True)
+                    raise ValidationError(
+                        "Cannot remove the last admin from the tenant."
+                    )
+                serializer = UpdateMemberRoleSerializer(
+                    membership, data=request.data, partial=True
+                )
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
         else:
-            serializer = UpdateMemberRoleSerializer(membership, data=request.data, partial=True)
+            serializer = UpdateMemberRoleSerializer(
+                membership, data=request.data, partial=True
+            )
             serializer.is_valid(raise_exception=True)
             serializer.save()
 
+        log_action(
+            actor=request.user,
+            action="member.role_changed",
+            target=membership.user.email,
+            metadata={"old_role": old_role, "new_role": membership.role},
+            tenant=tenant,
+        )
         return Response(MemberSerializer(membership).data)
 
 
@@ -262,6 +351,9 @@ class RemoveMemberView(APIView):
         if membership.user == request.user:
             raise ValidationError("You cannot remove yourself from the tenant.")
 
+        removed_email = membership.user.email
+        removed_role = membership.role
+
         # Prevent removing the last admin — atomic to avoid a race condition.
         if membership.role == TenantMembership.Role.ADMIN:
             with transaction.atomic():
@@ -271,9 +363,25 @@ class RemoveMemberView(APIView):
                     .count()
                 )
                 if admin_count <= 1:
-                    raise ValidationError("Cannot remove the last admin from the tenant.")
+                    raise ValidationError(
+                        "Cannot remove the last admin from the tenant."
+                    )
                 membership.delete()
+                log_action(
+                    actor=request.user,
+                    action="member.removed",
+                    target=removed_email,
+                    metadata={"role": removed_role},
+                    tenant=tenant,
+                )
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
         membership.delete()
+        log_action(
+            actor=request.user,
+            action="member.removed",
+            target=removed_email,
+            metadata={"role": removed_role},
+            tenant=tenant,
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,6 +1,7 @@
 """
 Integration tests for authentication endpoints.
 """
+
 import pytest
 from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
@@ -33,7 +34,9 @@ def existing_user(db):
         first_name="Existing",
         last_name="User",
     )
-    EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+    EmailAddress.objects.create(
+        user=user, email=user.email, verified=True, primary=True
+    )
     return user
 
 
@@ -44,7 +47,7 @@ class TestRegister:
     def test_register_creates_user(self, client):
         response = client.post(self.url, REGISTER_DATA)
         assert response.status_code == status.HTTP_201_CREATED
-        assert "access" in response.data
+        assert "code" in response.data
         assert User.objects.filter(email="new@example.com").exists()
 
     def test_register_sets_refresh_cookie(self, client):
@@ -65,12 +68,20 @@ class TestRegister:
     def test_register_weak_password(self, client):
         response = client.post(
             self.url,
-            {**REGISTER_DATA, "email": "weak@example.com", "slug": "weak-corp", "password": "123"},
+            {
+                **REGISTER_DATA,
+                "email": "weak@example.com",
+                "slug": "weak-corp",
+                "password": "123",
+            },
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_register_missing_email(self, client):
-        response = client.post(self.url, {"password": "goodpassword123", "company_name": "X", "slug": "x-co"})
+        response = client.post(
+            self.url,
+            {"password": "goodpassword123", "company_name": "X", "slug": "x-co"},
+        )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_register_creates_tenant(self, client):

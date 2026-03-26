@@ -1,6 +1,7 @@
 """
 Tests for TenantMiddleware subdomain extraction.
 """
+
 import pytest
 from django.test import RequestFactory, override_settings
 
@@ -23,16 +24,27 @@ class TestSlugExtraction:
     """Unit tests for _extract_slug — no DB needed."""
 
     def test_returns_none_for_root_domain(self):
-        assert TenantMiddleware._extract_slug("yourdomain.com", "yourdomain.com") is None
+        assert (
+            TenantMiddleware._extract_slug("yourdomain.com", "yourdomain.com") is None
+        )
 
     def test_extracts_subdomain(self):
-        assert TenantMiddleware._extract_slug("acme.yourdomain.com", "yourdomain.com") == "acme"
+        assert (
+            TenantMiddleware._extract_slug("acme.yourdomain.com", "yourdomain.com")
+            == "acme"
+        )
 
     def test_returns_none_for_www(self):
-        assert TenantMiddleware._extract_slug("www.yourdomain.com", "yourdomain.com") is None
+        assert (
+            TenantMiddleware._extract_slug("www.yourdomain.com", "yourdomain.com")
+            is None
+        )
 
     def test_returns_none_for_api(self):
-        assert TenantMiddleware._extract_slug("api.yourdomain.com", "yourdomain.com") is None
+        assert (
+            TenantMiddleware._extract_slug("api.yourdomain.com", "yourdomain.com")
+            is None
+        )
 
     def test_localhost_subdomain(self):
         assert TenantMiddleware._extract_slug("acme.localhost", "localhost") == "acme"

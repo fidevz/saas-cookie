@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin
 
 from apps.subscriptions.capabilities import CAPABILITY_REGISTRY
-from apps.subscriptions.models import Plan, Subscription
+from apps.subscriptions.models import Plan, StripeWebhookEvent, Subscription
 
 
 class PlanCapabilitiesForm(forms.ModelForm):
@@ -60,6 +60,7 @@ class PlanAdmin(admin.ModelAdmin):
         if fields is not None:
             fields = [f for f in fields if not f.startswith("cap_")]
         return super().get_form(request, obj, change, fields=fields, **kwargs)
+
     list_display = ["name", "amount", "currency", "interval", "trial_days", "is_active"]
     list_filter = ["interval", "is_active", "currency"]
     search_fields = ["name", "stripe_price_id"]
@@ -147,6 +148,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
         if fields is not None:
             fields = [f for f in fields if not f.startswith("cap_")]
         return super().get_form(request, obj, change, fields=fields, **kwargs)
+
     list_display = [
         "tenant",
         "plan",
@@ -168,6 +170,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
         "updated_at",
     ]
     raw_id_fields = ["tenant", "plan"]
+    ordering = ["-created_at"]
     fieldsets = [
         (
             None,
@@ -195,3 +198,12 @@ class SubscriptionAdmin(admin.ModelAdmin):
             },
         ),
     ]
+
+
+@admin.register(StripeWebhookEvent)
+class StripeWebhookEventAdmin(admin.ModelAdmin):
+    list_display = ["event_id", "event_type", "created_at"]
+    list_filter = ["event_type"]
+    search_fields = ["event_id"]
+    readonly_fields = ["event_id", "event_type", "created_at", "updated_at"]
+    ordering = ["-created_at"]

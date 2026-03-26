@@ -1,6 +1,7 @@
 """
 Mixins for tenant-scoped models and views.
 """
+
 from django.db import models
 
 

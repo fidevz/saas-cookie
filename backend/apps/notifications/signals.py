@@ -3,7 +3,7 @@ Signals for the notifications app.
 
 Sends a welcome notification when a user logs in for the first time.
 """
-import asyncio
+
 import logging
 
 from asgiref.sync import async_to_sync
@@ -40,7 +40,9 @@ def send_welcome_notification(sender, request, user, **kwargs):
 
     except Exception as exc:
         # Signals should not crash the login flow
-        logger.exception("Failed to create welcome notification for user %s: %s", user.pk, exc)
+        logger.exception(
+            "Failed to create welcome notification for user %s: %s", user.pk, exc
+        )
     finally:
         # Mark first login as done
         user.is_first_login = False
@@ -51,6 +53,7 @@ def _push_to_websocket(user_pk: int, notification) -> None:
     """Attempt to send a real-time notification through the channel layer."""
     try:
         from channels.layers import get_channel_layer
+
         from apps.notifications.serializers import NotificationSerializer
 
         channel_layer = get_channel_layer()

@@ -2,13 +2,14 @@
 Authentication views: register, login, logout, token refresh, Google OAuth,
 password reset, email verification.
 """
+
 import logging
 import secrets
 
 from django.conf import settings
-from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
+from django.core.cache import cache
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import status
@@ -25,7 +26,14 @@ from apps.authentication.serializers import (
     PasswordResetRequestSerializer,
     RegisterSerializer,
 )
-from utils.throttling import LoginThrottle, PasswordResetThrottle, RegisterThrottle, ResendVerificationThrottle, VerifyEmailThrottle
+from utils.audit import log_action
+from utils.throttling import (
+    LoginThrottle,
+    PasswordResetThrottle,
+    RegisterThrottle,
+    ResendVerificationThrottle,
+    VerifyEmailThrottle,
+)
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -44,9 +52,7 @@ COOKIE_SETTINGS = {
 
 
 def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
-    max_age = int(
-        settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds()
-    )
+    max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
     response.set_cookie(
         max_age=max_age,
         value=str(refresh_token),
@@ -77,6 +83,7 @@ def _generate_login_code(user_id: int) -> str:
 
 def _tenant_slug_for_user(user) -> str | None:
     from apps.tenants.models import TenantMembership
+
     membership = (
         TenantMembership.objects.select_related("tenant").filter(user=user).first()
     )
@@ -98,6 +105,13 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user, tenant = serializer.save()
+        log_action(
+            actor=user,
+            action="user.registered",
+            target=user.email,
+            metadata={"method": "email"},
+            tenant=tenant,
+        )
 
         access, refresh = _tokens_for_user(user)
 
@@ -139,7 +153,14 @@ class LoginView(APIView):
         # Check email verification before issuing tokens.
         # Google OAuth users are always verified (allauth marks them automatically).
         from allauth.account.models import EmailAddress
+
         if not EmailAddress.objects.filter(user=user, verified=True).exists():
+            log_action(
+                actor=None,
+                action="user.login_failed",
+                target=user.email,
+                metadata={"reason": "email_not_verified"},
+            )
             return Response(
                 {
                     "code": "email_not_verified",
@@ -151,6 +172,7 @@ class LoginView(APIView):
         # Fire the standard Django login signal so connected handlers
         # (e.g. welcome notification) are triggered, and last_login is updated.
         from django.contrib.auth.signals import user_logged_in
+
         user_logged_in.send(sender=user.__class__, request=request, user=user)
 
         # Refresh to pick up any changes made by signal handlers (e.g. is_first_login).
@@ -158,14 +180,19 @@ class LoginView(APIView):
 
         # Resolve tenant for this user (first admin membership)
         from apps.tenants.models import TenantMembership
+
         membership = (
-            TenantMembership.objects.select_related("tenant")
-            .filter(user=user)
-            .first()
+            TenantMembership.objects.select_related("tenant").filter(user=user).first()
         )
         tenant_slug = membership.tenant.slug if membership else None
 
         access, refresh = _tokens_for_user(user)
+        log_action(
+            actor=user,
+            action="user.login",
+            target=user.email,
+            metadata={"method": "email"},
+        )
 
         response = Response(
             {
@@ -198,7 +225,10 @@ class LogoutView(APIView):
             except (TokenError, InvalidToken):
                 pass  # Already invalid — that's fine
 
-        response = Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
+        log_action(actor=request.user, action="user.logout", target=request.user.email)
+        response = Response(
+            {"detail": "Successfully logged out."}, status=status.HTTP_200_OK
+        )
         _clear_refresh_cookie(response)
         return response
 
@@ -252,7 +282,9 @@ class ResendVerificationView(APIView):
 
         # Always 200 — never reveal whether an email exists
         return Response(
-            {"detail": "If that email exists and is unverified, a new confirmation link was sent."}
+            {
+                "detail": "If that email exists and is unverified, a new confirmation link was sent."
+            }
         )
 
 
@@ -267,7 +299,9 @@ class VerifyEmailView(APIView):
 
         key = request.data.get("key", "").strip()
         if not key:
-            return Response({"detail": "Key is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Key is required."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Try HMAC key first (stateless, most common).  from_key() returns None
         # when the key is invalid OR when the email is already verified (it
@@ -280,8 +314,9 @@ class VerifyEmailView(APIView):
             # giving up — this happens when the view previously raised an
             # exception after saving verified=True but before returning 200.
             try:
-                from django.core import signing
                 from allauth.account import app_settings as allauth_settings
+                from django.core import signing
+
                 max_age = int(allauth_settings.EMAIL_CONFIRMATION_EXPIRE_DAYS * 86400)
                 pk = signing.loads(key, salt=allauth_settings.SALT, max_age=max_age)
                 ea = EmailAddress.objects.filter(pk=pk, verified=True).first()
@@ -289,13 +324,20 @@ class VerifyEmailView(APIView):
                     # Already verified — treat as success so the user can log in.
                     code = _generate_login_code(ea.user_id)
                     tenant_slug = _tenant_slug_for_user(ea.user)
-                    return Response({"detail": "Email verified successfully.", "code": code, "tenant_slug": tenant_slug})
+                    return Response(
+                        {
+                            "detail": "Email verified successfully.",
+                            "code": code,
+                            "tenant_slug": tenant_slug,
+                        }
+                    )
             except Exception:
                 pass
 
             # Fallback: DB-stored confirmation (legacy / non-HMAC flow)
             try:
                 from allauth.account.models import EmailConfirmation
+
                 confirmation = EmailConfirmation.objects.get(key=key)
             except Exception:
                 confirmation = None
@@ -313,25 +355,47 @@ class VerifyEmailView(APIView):
         if email_address.verified:
             code = _generate_login_code(email_address.user_id)
             tenant_slug = _tenant_slug_for_user(email_address.user)
-            return Response({"detail": "Email verified successfully.", "code": code, "tenant_slug": tenant_slug})
+            return Response(
+                {
+                    "detail": "Email verified successfully.",
+                    "code": code,
+                    "tenant_slug": tenant_slug,
+                }
+            )
 
         email_address.verified = True
         email_address.set_as_primary(conditional=True)
         email_address.save(update_fields=["verified", "primary"])
+        log_action(
+            actor=email_address.user,
+            action="email.verified",
+            target=email_address.email,
+        )
 
         # Fire the standard signal so any connected handlers run.
-        from allauth.account.models import EmailAddress as EA
         from allauth.account import signals
+        from allauth.account.models import EmailAddress as EA
+
         signals.email_confirmed.send(
             sender=EA,
             request=request,
             email_address=email_address,
         )
 
-        logger.info("Email verified for user %s (%s)", email_address.user_id, email_address.email)
+        logger.info(
+            "Email verified for user %s (%s)",
+            email_address.user_id,
+            email_address.email,
+        )
         code = _generate_login_code(email_address.user_id)
         tenant_slug = _tenant_slug_for_user(email_address.user)
-        return Response({"detail": "Email verified successfully.", "code": code, "tenant_slug": tenant_slug})
+        return Response(
+            {
+                "detail": "Email verified successfully.",
+                "code": code,
+                "tenant_slug": tenant_slug,
+            }
+        )
 
 
 class ExchangeCodeView(APIView):
@@ -342,12 +406,17 @@ class ExchangeCodeView(APIView):
     def post(self, request: Request) -> Response:
         code = request.data.get("code", "").strip()
         if not code:
-            return Response({"detail": "Code is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Code is required."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         cache_key = f"login_code:{code}"
         user_id = cache.get(cache_key)
         if user_id is None:
-            return Response({"detail": "Invalid or expired code."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Invalid or expired code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Delete before issuing tokens — single use even if response fails
         cache.delete(cache_key)
@@ -355,23 +424,35 @@ class ExchangeCodeView(APIView):
         try:
             user = User.objects.get(pk=user_id)
         except User.DoesNotExist:
-            return Response({"detail": "Invalid or expired code."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Invalid or expired code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Fire the login signal so handlers like the welcome notification run.
         from django.contrib.auth.signals import user_logged_in
+
         user_logged_in.send(sender=user.__class__, request=request, user=user)
         user.refresh_from_db()
 
         access, refresh = _tokens_for_user(user)
-        response = Response({
-            "access": access,
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-            },
-        })
+        log_action(
+            actor=user,
+            action="user.login",
+            target=user.email,
+            metadata={"method": "code_exchange"},
+        )
+        response = Response(
+            {
+                "access": access,
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                },
+            }
+        )
         _set_refresh_cookie(response, refresh)
         return response
 
@@ -382,26 +463,32 @@ class CheckSlugView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request: Request) -> Response:
+        import re
+
+        from better_profanity import profanity
+
         from apps.authentication.serializers import RESERVED_SLUGS
         from apps.tenants.models import Tenant
-        from better_profanity import profanity
-        import re
 
         slug = request.query_params.get("slug", "").strip().lower()
 
         if not slug:
-            return Response({"available": False, "error": "slug is required"}, status=400)
+            return Response(
+                {"available": False, "error": "slug is required"}, status=400
+            )
 
         # Validate format
         pattern = re.compile(r"^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$")
         if not pattern.match(slug):
-            return Response({
-                "available": False,
-                "error": (
-                    "Slug must be 3–50 characters: lowercase letters, numbers, and hyphens. "
-                    "Cannot start or end with a hyphen."
-                ),
-            })
+            return Response(
+                {
+                    "available": False,
+                    "error": (
+                        "Slug must be 3–50 characters: lowercase letters, numbers, and hyphens. "
+                        "Cannot start or end with a hyphen."
+                    ),
+                }
+            )
 
         if slug in RESERVED_SLUGS or profanity.contains_profanity(slug):
             suggestion = f"{slug}-app"
@@ -431,6 +518,7 @@ class GoogleLoginView(APIView):
 
     def get(self, request: Request) -> Response:
         from urllib.parse import urlencode
+
         from django.urls import reverse
 
         google_config = settings.SOCIALACCOUNT_PROVIDERS.get("google", {})
@@ -494,11 +582,12 @@ class GoogleCallbackView(APIView):
         import json as json_mod
         import urllib.request
         from urllib.parse import urlencode
-        from django.http import HttpResponseRedirect
-        from django.urls import reverse
+
         from allauth.socialaccount.helpers import complete_social_login
         from allauth.socialaccount.models import SocialToken
         from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+        from django.http import HttpResponseRedirect
+        from django.urls import reverse
 
         frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
         code = request.query_params.get("code")
@@ -506,13 +595,17 @@ class GoogleCallbackView(APIView):
         state = request.query_params.get("state", "")
 
         if error or not code:
-            return HttpResponseRedirect(f"{frontend_url}/auth/callback?error=oauth_failed")
+            return HttpResponseRedirect(
+                f"{frontend_url}/auth/callback?error=oauth_failed"
+            )
 
         # Validate the CSRF state token generated in GoogleLoginView.get()
         state_key = f"oauth_state:{state}"
         if not state or not cache.get(state_key):
             logger.warning("Google OAuth: invalid or missing state parameter")
-            return HttpResponseRedirect(f"{frontend_url}/auth/callback?error=oauth_failed")
+            return HttpResponseRedirect(
+                f"{frontend_url}/auth/callback?error=oauth_failed"
+            )
         cache.delete(state_key)  # single-use
 
         try:
@@ -523,13 +616,15 @@ class GoogleCallbackView(APIView):
             callback_url = request.build_absolute_uri(reverse("google-callback"))
 
             # Exchange authorization code for an access token directly with Google.
-            token_data = urlencode({
-                "code": code,
-                "client_id": client_id,
-                "client_secret": client_secret,
-                "redirect_uri": callback_url,
-                "grant_type": "authorization_code",
-            }).encode()
+            token_data = urlencode(
+                {
+                    "code": code,
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "redirect_uri": callback_url,
+                    "grant_type": "authorization_code",
+                }
+            ).encode()
             token_req = urllib.request.Request(
                 "https://oauth2.googleapis.com/token",
                 data=token_data,
@@ -562,6 +657,12 @@ class GoogleCallbackView(APIView):
             # POST /api/v1/auth/exchange-code/ — keeping the token out of browser
             # history, proxy logs, and referrer headers.
             _, refresh = _tokens_for_user(user)
+            log_action(
+                actor=user,
+                action="user.login",
+                target=user.email,
+                metadata={"method": "google"},
+            )
             code = _generate_login_code(user.pk)
             response = HttpResponseRedirect(f"{frontend_url}/auth/callback?code={code}")
             _set_refresh_cookie(response, refresh)
@@ -569,7 +670,9 @@ class GoogleCallbackView(APIView):
 
         except Exception as exc:
             logger.warning("Google OAuth callback error: %s", exc)
-            return HttpResponseRedirect(f"{frontend_url}/auth/callback?error=oauth_failed")
+            return HttpResponseRedirect(
+                f"{frontend_url}/auth/callback?error=oauth_failed"
+            )
 
 
 class PasswordResetRequestView(APIView):
@@ -591,6 +694,7 @@ class PasswordResetRequestView(APIView):
 
         from django.contrib.sites.models import Site
         from django.template.loader import render_to_string
+
         from utils.email import send_email
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -614,8 +718,12 @@ class PasswordResetRequestView(APIView):
             # key is not exposed in context — only the full URL is shown
         }
 
-        html_body = render_to_string("account/email/password_reset_key_message.html", context)
-        text_body = render_to_string("account/email/password_reset_key_message.txt", context)
+        html_body = render_to_string(
+            "account/email/password_reset_key_message.html", context
+        )
+        text_body = render_to_string(
+            "account/email/password_reset_key_message.txt", context
+        )
 
         send_email(
             to=email,
@@ -623,6 +731,7 @@ class PasswordResetRequestView(APIView):
             html_body=html_body,
             text_body=text_body,
         )
+        log_action(actor=None, action="password.reset_requested", target=email)
 
         return Response({"detail": "Password reset email sent if account exists."})
 
@@ -659,5 +768,6 @@ class PasswordResetConfirmView(APIView):
 
         user.set_password(new_password)
         user.save(update_fields=["password"])
+        log_action(actor=user, action="password.reset_completed", target=user.email)
 
         return Response({"detail": "Password has been reset."})

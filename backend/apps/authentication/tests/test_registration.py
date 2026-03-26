@@ -1,12 +1,12 @@
 """
 Tests for registration flow: slug selection, company name, tenant creation.
 """
+
 import pytest
 from django.urls import reverse
 from rest_framework.test import APIClient
 
 from apps.tenants.models import Tenant
-
 
 VALID_PAYLOAD = {
     "company_name": "Acme Inc",
@@ -28,6 +28,7 @@ class TestCheckSlug:
 
     def test_taken_slug_returns_suggestion(self):
         from apps.users.models import CustomUser
+
         owner = CustomUser.objects.create_user(email="owner@taken.com", password="x")
         Tenant.objects.create(name="Taken", slug="taken", owner=owner)
         client = APIClient()
@@ -76,10 +77,10 @@ class TestRegisterView:
         assert resp.status_code == 201
         assert resp.data["tenant_slug"] == "acme"
 
-    def test_register_response_includes_access_token(self):
+    def test_register_response_includes_exchange_code(self):
         client = APIClient()
         resp = client.post(reverse("auth-register"), VALID_PAYLOAD, format="json")
-        assert "access" in resp.data
+        assert "code" in resp.data
 
     def test_register_duplicate_slug_returns_400(self):
         client = APIClient()

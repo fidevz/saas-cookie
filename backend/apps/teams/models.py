@@ -1,13 +1,13 @@
 """
 Team invitation model.
 """
+
 import uuid
 from datetime import timedelta
 
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 
 from apps.tenants.models import TenantMembership
 
@@ -26,7 +26,9 @@ class Invitation(models.Model):
         choices=TenantMembership.Role.choices,
         default=TenantMembership.Role.MEMBER,
     )
-    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)
+    token = models.UUIDField(
+        default=uuid.uuid4, unique=True, editable=False, db_index=True
+    )
     expires_at = models.DateTimeField()
     accepted = models.BooleanField(default=False)
     accepted_at = models.DateTimeField(null=True, blank=True)

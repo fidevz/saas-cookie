@@ -16,7 +16,7 @@ interface NotificationState {
   markAllRead: () => void;
   removeNotification: (id: number) => void;
   clearRead: () => void;
-  connectWebSocket: (token: string) => void;
+  connectWebSocket: () => void;
   disconnectWebSocket: () => void;
 }
 
@@ -84,8 +84,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       notifications: state.notifications.filter((n) => !n.read),
     })),
 
-  connectWebSocket: (token: string) => {
-    wsClient.connect(token, (data: unknown) => {
+  connectWebSocket: () => {
+    void wsClient.connect((data: unknown) => {
       if (
         data &&
         typeof data === "object" &&

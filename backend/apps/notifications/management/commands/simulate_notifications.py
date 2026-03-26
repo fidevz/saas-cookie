@@ -7,6 +7,7 @@ Usage:
     python manage.py simulate_notifications <email> --min-delay 2 --max-delay 8
     python manage.py simulate_notifications <email> --count 5 --min-delay 1 --max-delay 3
 """
+
 import random
 import time
 
@@ -86,7 +87,9 @@ class Command(BaseCommand):
     help = "Simulate random in-app notifications for a user (useful for testing the notification system)"
 
     def add_arguments(self, parser):
-        parser.add_argument("email", type=str, help="Email of the user to send notifications to")
+        parser.add_argument(
+            "email", type=str, help="Email of the user to send notifications to"
+        )
         parser.add_argument(
             "--count",
             type=int,
@@ -143,9 +146,7 @@ class Command(BaseCommand):
                 _push_to_websocket(user.pk, notification)
 
                 sent += 1
-                self.stdout.write(
-                    f"  [{sent}] [{notif_type.upper()}] {title}"
-                )
+                self.stdout.write(f"  [{sent}] [{notif_type.upper()}] {title}")
 
                 if count and sent >= count:
                     break
@@ -157,4 +158,6 @@ class Command(BaseCommand):
         except KeyboardInterrupt:
             pass
 
-        self.stdout.write(self.style.SUCCESS(f"\nDone. Sent {sent} notification(s) to {user.email}."))
+        self.stdout.write(
+            self.style.SUCCESS(f"\nDone. Sent {sent} notification(s) to {user.email}.")
+        )

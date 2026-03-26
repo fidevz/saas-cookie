@@ -1,6 +1,7 @@
 """
 Subscription and Plan models.
 """
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -17,11 +18,15 @@ class Plan(BaseModel):
         YEAR = "year", _("Yearly")
 
     name = models.CharField(max_length=100)
-    stripe_price_id = models.CharField(max_length=255, unique=True, blank=True, null=True, default=None)
+    stripe_price_id = models.CharField(
+        max_length=255, unique=True, blank=True, null=True, default=None
+    )
     stripe_product_id = models.CharField(max_length=255, blank=True, default="")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=3, default="usd")
-    interval = models.CharField(max_length=10, choices=Interval.choices, default=Interval.MONTH)
+    interval = models.CharField(
+        max_length=10, choices=Interval.choices, default=Interval.MONTH
+    )
     trial_days = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     features = models.JSONField(default=list, blank=True)
@@ -77,8 +82,12 @@ class Subscription(BaseModel):
         choices=Status.choices,
         default=Status.TRIALING,
     )
-    stripe_subscription_id = models.CharField(max_length=255, blank=True, default="", db_index=True)
-    stripe_customer_id = models.CharField(max_length=255, blank=True, default="", db_index=True)
+    stripe_subscription_id = models.CharField(
+        max_length=255, blank=True, default="", db_index=True
+    )
+    stripe_customer_id = models.CharField(
+        max_length=255, blank=True, default="", db_index=True
+    )
     current_period_start = models.DateTimeField(null=True, blank=True)
     current_period_end = models.DateTimeField(null=True, blank=True)
     trial_end = models.DateTimeField(null=True, blank=True)
@@ -87,7 +96,7 @@ class Subscription(BaseModel):
         default=dict,
         blank=True,
         help_text="Snapshot of the plan's capabilities at subscription time. "
-                  "Isolates existing subscribers from future plan changes.",
+        "Isolates existing subscribers from future plan changes.",
     )
 
     class Meta:
@@ -99,4 +108,22 @@ class Subscription(BaseModel):
 
     @property
     def is_active(self) -> bool:
-        return self.status in (self.Status.ACTIVE, self.Status.TRIALING, self.Status.CANCELLING)
+        return self.status in (
+            self.Status.ACTIVE,
+            self.Status.TRIALING,
+            self.Status.CANCELLING,
+        )
+
+
+class StripeWebhookEvent(BaseModel):
+    """Records processed Stripe event IDs to prevent duplicate handling."""
+
+    event_id = models.CharField(max_length=255, unique=True)
+    event_type = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = "Stripe Webhook Event"
+        verbose_name_plural = "Stripe Webhook Events"
+
+    def __str__(self):
+        return f"{self.event_type} ({self.event_id})"

@@ -13,11 +13,29 @@ from apps.teams.views import (
 
 urlpatterns = [
     path("invitations/", InviteMemberView.as_view(), name="team-invite"),
-    path("invitations/pending/", ListInvitationsView.as_view(), name="team-invitations-list"),
-    path("invitations/<int:pk>/cancel/", CancelInvitationView.as_view(), name="team-invitation-cancel"),
+    path(
+        "invitations/pending/",
+        ListInvitationsView.as_view(),
+        name="team-invitations-list",
+    ),
+    path(
+        "invitations/<int:pk>/cancel/",
+        CancelInvitationView.as_view(),
+        name="team-invitation-cancel",
+    ),
     path("members/", ListMembersView.as_view(), name="team-members"),
     path("members/<int:pk>/", UpdateMemberRoleView.as_view(), name="team-member-role"),
-    path("members/<int:pk>/remove/", RemoveMemberView.as_view(), name="team-member-remove"),
-    path("invitations/<uuid:token>/", GetInvitationView.as_view(), name="invitation-detail"),
-    path("accept-invite/<uuid:token>/", AcceptInviteView.as_view(), name="accept-invite"),
+    path(
+        "members/<int:pk>/remove/",
+        RemoveMemberView.as_view(),
+        name="team-member-remove",
+    ),
+    path(
+        "invitations/<uuid:token>/",
+        GetInvitationView.as_view(),
+        name="invitation-detail",
+    ),
+    path(
+        "accept-invite/<uuid:token>/", AcceptInviteView.as_view(), name="accept-invite"
+    ),
 ]

@@ -176,6 +176,64 @@ If a deployment fails:
 
 ---
 
+## Backups
+
+### What gets backed up
+
+| Data | Method | Destination |
+|------|--------|-------------|
+| PostgreSQL | `pg_dump \| gzip \| rclone rcat` | Cloudflare R2 |
+| MinIO files | Not auto-backed up — use R2 bucket replication or `rclone sync` manually | — |
+| Redis | Not backed up — fully ephemeral (Celery queues + cache) | — |
+
+### Setup
+
+**1. Create an R2 bucket** named `backups` (or your preference) in the Cloudflare dashboard.
+
+**2. Create an R2 API token** with Object Read & Write permissions scoped to that bucket. Note the Access Key ID, Secret Access Key, and endpoint URL (`https://<account-id>.r2.cloudflarestorage.com`).
+
+**3. Add to your `.env`:**
+```env
+BACKUP_SCHEDULE=0 2 * * *      # daily at 2am UTC (cron syntax)
+BACKUP_RETENTION_DAYS=7
+R2_BUCKET=backups
+R2_ACCESS_KEY=<r2-access-key-id>
+R2_SECRET_KEY=<r2-secret-access-key>
+R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+```
+
+The `backup` service in `docker-compose.yml` starts automatically with the rest of the stack. Backup files are stored at `postgres/postgres_YYYYMMDD_HHMMSS.sql.gz` in the R2 bucket. Files older than `BACKUP_RETENTION_DAYS` are pruned automatically after each run.
+
+### Triggering a manual backup
+
+```bash
+docker compose exec backup /backup.sh
+```
+
+### Restoring from backup
+
+```bash
+# 1. Download the backup file from R2
+rclone copy r2:backups/postgres/postgres_YYYYMMDD_HHMMSS.sql.gz ./
+
+# 2. Restore into the running database container
+gunzip -c postgres_YYYYMMDD_HHMMSS.sql.gz \
+  | docker compose exec -T db \
+    psql -U postgres saas_boilerplate
+```
+
+> Always take a fresh backup before restoring, and test restores in staging first.
+
+### Verifying backups
+
+After the first scheduled run, confirm the file appeared in R2:
+```bash
+docker compose exec backup \
+  rclone ls r2:${R2_BUCKET}/postgres
+```
+
+---
+
 ## Staging Environment
 
 Always maintain a staging environment that mirrors production:

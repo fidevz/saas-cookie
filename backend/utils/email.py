@@ -1,9 +1,8 @@
 """
 Resend email backend for Django + convenience ``send_email`` helper.
 """
+
 import logging
-from email.mime.text import MIMEText
-from io import BytesIO
 
 from django.conf import settings
 from django.core.mail.backends.base import BaseEmailBackend

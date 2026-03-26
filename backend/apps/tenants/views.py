@@ -1,10 +1,8 @@
 """
 Tenant views.
 """
-from rest_framework import status
+
 from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView
-from rest_framework.request import Request
-from rest_framework.response import Response
 
 from apps.tenants.models import Tenant, TenantMembership
 from apps.tenants.serializers import TenantMembershipSerializer, TenantSerializer

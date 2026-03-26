@@ -1,6 +1,7 @@
 """
 Custom DRF permission classes for tenant-scoped access control.
 """
+
 from rest_framework.permissions import BasePermission
 
 
@@ -121,7 +122,9 @@ class _HasPlanCapabilityPermission(BasePermission):
         from apps.subscriptions.models import Plan, Subscription
 
         try:
-            subscription = Subscription.objects.select_related("plan").get(tenant=tenant)
+            subscription = Subscription.objects.select_related("plan").get(
+                tenant=tenant
+            )
         except Subscription.DoesNotExist:
             return True  # No subscription means no billing restrictions
 
@@ -194,7 +197,9 @@ class _WithinPlanLimitPermission(BasePermission):
         from apps.subscriptions.models import Plan, Subscription
 
         try:
-            subscription = Subscription.objects.select_related("plan").get(tenant=tenant)
+            subscription = Subscription.objects.select_related("plan").get(
+                tenant=tenant
+            )
         except Subscription.DoesNotExist:
             return True  # No subscription means no billing restrictions
 
