@@ -12,7 +12,9 @@ import { resendVerificationEmail } from "@/lib/auth";
 function CheckEmailContent() {
   const t = useTranslations("auth.checkEmail");
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") ?? "";
+  const rawEmail = searchParams.get("email") ?? "";
+  // Validate email format before rendering to prevent malformed content in the UI.
+  const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail) ? rawEmail : "";
   const [resending, setResending] = useState(false);
 
   const handleResend = async () => {
@@ -22,7 +24,7 @@ function CheckEmailContent() {
       await resendVerificationEmail(email);
       toast.success(t("resent"));
     } catch {
-      toast.error("Failed to resend. Please try again.");
+      toast.error(t("failedToResend"));
     } finally {
       setResending(false);
     }
@@ -51,7 +53,7 @@ function CheckEmailContent() {
           <div className="space-y-1">
             {email && (
               <p className="text-sm font-medium">
-                We sent a link to <strong>{email}</strong>
+                {t("sentLink", { email })}
               </p>
             )}
             <p className="text-sm text-muted-foreground">{t("body")}</p>
@@ -62,7 +64,7 @@ function CheckEmailContent() {
             onClick={handleResend}
             disabled={resending || !email}
           >
-            {resending ? "Sending..." : t("resend")}
+            {resending ? t("sending") : t("resend")}
           </Button>
         </div>
 

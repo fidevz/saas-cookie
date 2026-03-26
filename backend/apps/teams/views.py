@@ -3,6 +3,7 @@ Team management views.
 """
 import logging
 
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -75,7 +76,12 @@ class InviteMemberView(APIView):
 
 
 class GetInvitationView(APIView):
-    """GET /api/v1/teams/invitations/{token}/ — fetch invite details (public)."""
+    """GET /api/v1/teams/invitations/{token}/ — fetch invite details (public).
+
+    Returns only the minimum information needed for the registration UI.
+    Full details (invited email, etc.) are intentionally not returned here
+    to prevent email enumeration attacks.
+    """
 
     permission_classes = [AllowAny]
 
@@ -84,7 +90,18 @@ class GetInvitationView(APIView):
             invitation = Invitation.objects.select_related("tenant").get(token=token)
         except (Invitation.DoesNotExist, ValueError):
             raise NotFound("Invitation not found.")
-        return Response(InvitationSerializer(invitation).data)
+
+        if not invitation.is_valid:
+            raise NotFound("Invitation not found.")
+
+        return Response(
+            {
+                "tenant": {"name": invitation.tenant.name, "slug": invitation.tenant.slug},
+                "role": invitation.role,
+                "email": invitation.email,
+                "is_valid": True,
+            }
+        )
 
 
 class AcceptInviteView(APIView):
@@ -204,18 +221,26 @@ class UpdateMemberRoleView(APIView):
         except TenantMembership.DoesNotExist:
             raise NotFound("Member not found.")
 
-        # Prevent removing the last admin
-        if membership.role == TenantMembership.Role.ADMIN:
-            admin_count = TenantMembership.objects.filter(
-                tenant=tenant, role=TenantMembership.Role.ADMIN
-            ).count()
-            new_role = request.data.get("role")
-            if new_role != TenantMembership.Role.ADMIN and admin_count <= 1:
-                raise ValidationError("Cannot remove the last admin from the tenant.")
-
-        serializer = UpdateMemberRoleSerializer(membership, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        new_role = request.data.get("role")
+        # Prevent removing the last admin — use select_for_update inside a
+        # transaction to avoid a race condition where two concurrent requests
+        # could both pass the count check and both demote the last admin.
+        if membership.role == TenantMembership.Role.ADMIN and new_role != TenantMembership.Role.ADMIN:
+            with transaction.atomic():
+                admin_count = (
+                    TenantMembership.objects.select_for_update()
+                    .filter(tenant=tenant, role=TenantMembership.Role.ADMIN)
+                    .count()
+                )
+                if admin_count <= 1:
+                    raise ValidationError("Cannot remove the last admin from the tenant.")
+                serializer = UpdateMemberRoleSerializer(membership, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+        else:
+            serializer = UpdateMemberRoleSerializer(membership, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
 
         return Response(MemberSerializer(membership).data)
 
@@ -237,13 +262,18 @@ class RemoveMemberView(APIView):
         if membership.user == request.user:
             raise ValidationError("You cannot remove yourself from the tenant.")
 
-        # Prevent removing the last admin
+        # Prevent removing the last admin — atomic to avoid a race condition.
         if membership.role == TenantMembership.Role.ADMIN:
-            admin_count = TenantMembership.objects.filter(
-                tenant=tenant, role=TenantMembership.Role.ADMIN
-            ).count()
-            if admin_count <= 1:
-                raise ValidationError("Cannot remove the last admin from the tenant.")
+            with transaction.atomic():
+                admin_count = (
+                    TenantMembership.objects.select_for_update()
+                    .filter(tenant=tenant, role=TenantMembership.Role.ADMIN)
+                    .count()
+                )
+                if admin_count <= 1:
+                    raise ValidationError("Cannot remove the last admin from the tenant.")
+                membership.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
 
         membership.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

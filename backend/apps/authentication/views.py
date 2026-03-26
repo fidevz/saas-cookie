@@ -25,7 +25,7 @@ from apps.authentication.serializers import (
     PasswordResetRequestSerializer,
     RegisterSerializer,
 )
-from utils.throttling import LoginThrottle, RegisterThrottle, ResendVerificationThrottle
+from utils.throttling import LoginThrottle, PasswordResetThrottle, RegisterThrottle, ResendVerificationThrottle, VerifyEmailThrottle
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -101,9 +101,16 @@ class RegisterView(APIView):
 
         access, refresh = _tokens_for_user(user)
 
+        # When accepting an invite the frontend redirects to the tenant subdomain's
+        # /auth/callback to set the refresh cookie on the correct host. To avoid
+        # embedding the access token in the URL (browser history / proxy logs), we
+        # return a short-lived one-time code instead. The frontend uses ?code= which
+        # is already handled by the existing ExchangeCodeView / callback page flow.
+        code = _generate_login_code(user.pk)
+
         response = Response(
             {
-                "access": access,
+                "code": code,
                 "tenant_slug": tenant.slug,
                 "user": {
                     "id": user.id,
@@ -253,6 +260,7 @@ class VerifyEmailView(APIView):
     """POST /api/v1/auth/verify-email/ — confirm email address from link key."""
 
     permission_classes = [AllowAny]
+    throttle_classes = [VerifyEmailThrottle]
 
     def post(self, request: Request) -> Response:
         from allauth.account.models import EmailAddress, EmailConfirmationHMAC
@@ -429,12 +437,18 @@ class GoogleLoginView(APIView):
         client_id = google_config.get("APP", {}).get("client_id", "")
         callback_url = request.build_absolute_uri(reverse("google-callback"))
 
+        # Generate a CSRF state token and store it in the cache for 10 minutes.
+        # GoogleCallbackView validates this before exchanging the authorization code.
+        state = secrets.token_urlsafe(32)
+        cache.set(f"oauth_state:{state}", True, timeout=600)
+
         params = {
             "client_id": client_id,
             "redirect_uri": callback_url,
             "response_type": "code",
             "scope": "openid profile email",
             "access_type": "online",
+            "state": state,
         }
         url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
         return Response({"url": url})
@@ -489,9 +503,17 @@ class GoogleCallbackView(APIView):
         frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
         code = request.query_params.get("code")
         error = request.query_params.get("error")
+        state = request.query_params.get("state", "")
 
         if error or not code:
             return HttpResponseRedirect(f"{frontend_url}/auth/callback?error=oauth_failed")
+
+        # Validate the CSRF state token generated in GoogleLoginView.get()
+        state_key = f"oauth_state:{state}"
+        if not state or not cache.get(state_key):
+            logger.warning("Google OAuth: invalid or missing state parameter")
+            return HttpResponseRedirect(f"{frontend_url}/auth/callback?error=oauth_failed")
+        cache.delete(state_key)  # single-use
 
         try:
             google_config = settings.SOCIALACCOUNT_PROVIDERS.get("google", {})
@@ -535,8 +557,13 @@ class GoogleCallbackView(APIView):
             if not user or not user.pk:
                 raise ValueError("OAuth login did not return a valid user")
 
-            access, refresh = _tokens_for_user(user)
-            response = HttpResponseRedirect(f"{frontend_url}/auth/callback?access={access}")
+            # Issue a short-lived one-time code instead of embedding the access token
+            # directly in the URL. The frontend exchanges the code for tokens via
+            # POST /api/v1/auth/exchange-code/ — keeping the token out of browser
+            # history, proxy logs, and referrer headers.
+            _, refresh = _tokens_for_user(user)
+            code = _generate_login_code(user.pk)
+            response = HttpResponseRedirect(f"{frontend_url}/auth/callback?code={code}")
             _set_refresh_cookie(response, refresh)
             return response
 
@@ -549,7 +576,7 @@ class PasswordResetRequestView(APIView):
     """POST /api/v1/auth/password-reset/ — send password-reset email."""
 
     permission_classes = [AllowAny]
-    throttle_classes = [LoginThrottle]
+    throttle_classes = [PasswordResetThrottle]
 
     def post(self, request: Request) -> Response:
         serializer = PasswordResetRequestSerializer(data=request.data)

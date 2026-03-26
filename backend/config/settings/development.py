@@ -64,6 +64,8 @@ REST_FRAMEWORK = {
         "register": "1000/minute",
         "resend_verification": "1000/hour",
         "email_change": "1000/hour",
+        "password_reset": "1000/hour",
+        "verify_email": "1000/hour",
     },
 }
 

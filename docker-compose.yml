@@ -5,6 +5,16 @@
 # See README.md → Quick Start for local dev instructions.
 # =============================================================================
 
+networks:
+  # Public-facing services (frontend, backend) receive external traffic via Coolify proxy.
+  public:
+    driver: bridge
+  # Internal services (db, redis, minio) are NOT reachable from the host.
+  # Only containers on this network can talk to them.
+  internal:
+    driver: bridge
+    internal: true
+
 services:
 
   # ─── Frontend ──────────────────────────────────────────────────────────────
@@ -19,6 +29,8 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    networks:
+      - public
     depends_on:
       backend:
         condition: service_healthy
@@ -39,6 +51,9 @@ services:
       - ./backend/.env
     ports:
       - "8000:8000"
+    networks:
+      - public
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -65,6 +80,8 @@ services:
     command: uv run celery -A config worker -l info --concurrency 2
     env_file:
       - ./backend/.env
+    networks:
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -85,6 +102,8 @@ services:
     command: uv run celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     env_file:
       - ./backend/.env
+    networks:
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -106,8 +125,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    # No ports: — PostgreSQL is only reachable from the internal Docker network.
+    # For admin access in production use: ssh -L 5432:localhost:5432 user@server
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-saas_boilerplate}"]
       interval: 10s
@@ -123,13 +144,16 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    # REDIS_PASSWORD is required — set it in .env alongside REDIS_URL.
+    # REDIS_URL must include the password: redis://:password@redis:6379/0
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     volumes:
       - redis_data:/data
-    ports:
-      - "6379:6379"
+    # No ports: — Redis is only reachable from the internal Docker network.
+    networks:
+      - internal
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -149,9 +173,11 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
     volumes:
       - minio_data:/data
-    ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # MinIO Console
+    # No ports: — MinIO is accessed only via the Coolify reverse proxy (traefik).
+    # S3 API:     https://storage.yourdomain.com  → port 9000 (internal)
+    # Console:    https://storage-ui.yourdomain.com → port 9001 (internal)
+    networks:
+      - internal
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
@@ -179,19 +205,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET: ${MINIO_BUCKET:-media}
-
-  # ─── Mailhog (dev email catcher) ───────────────────────────────────────────
-  mailhog:
-    image: mailhog/mailhog:latest
-    restart: unless-stopped
-    ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
-    deploy:
-      resources:
-        limits:
-          cpus: "0.1"
-          memory: 64M
+    networks:
+      - internal
 
 volumes:
   postgres_data:

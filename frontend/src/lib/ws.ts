@@ -1,4 +1,12 @@
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000";
+const _wsUrl = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000";
+// Enforce encrypted WebSocket connections in production.
+if (process.env.NODE_ENV === "production" && _wsUrl.startsWith("ws://")) {
+  throw new Error(
+    `NEXT_PUBLIC_WS_URL must use wss:// in production (got: ${_wsUrl}). ` +
+      "Unencrypted WebSocket connections are not allowed."
+  );
+}
+const WS_BASE = _wsUrl;
 
 class WebSocketClient {
   private ws: WebSocket | null = null;

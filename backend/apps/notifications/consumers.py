@@ -21,12 +21,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     """
 
     async def connect(self):
-        user = await self._authenticate()
+        user, tenant = await self._authenticate()
         if user is None:
             await self.close(code=4001)
             return
 
         self.user = user
+        self.tenant = tenant
         self.group_name = f"notifications_{user.pk}"
 
         await self.channel_layer.group_add(self.group_name, self.channel_name)
@@ -76,7 +77,10 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     # ------------------------------------------------------------------
 
     async def _authenticate(self):
-        """Extract and validate the JWT token from the query string."""
+        """Extract and validate the JWT token from the query string.
+
+        Returns a (user, tenant) tuple, or (None, None) on failure.
+        """
         from urllib.parse import parse_qs
 
         from asgiref.sync import sync_to_async
@@ -87,11 +91,11 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
         if not token_list:
             logger.debug("WebSocket connection rejected: no token provided")
-            return None
+            return None, None
 
         raw_token = token_list[0]
 
-        # Validate token and fetch user — both ops may hit the DB, so wrap in sync_to_async
+        # Validate token and fetch user + tenant — both ops may hit the DB
         @sync_to_async(thread_sensitive=False)
         def validate_and_get_user(token_str):
             from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -99,17 +103,21 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             from rest_framework_simplejwt.tokens import AccessToken
 
             try:
-                # AccessToken validates signature, expiry, and blacklist in one call
                 token = AccessToken(token_str)
                 user_id = token[jwt_settings.USER_ID_CLAIM]
             except (InvalidToken, TokenError) as exc:
                 logger.debug("WebSocket auth failed: %s", exc)
-                return None
+                return None, None
             except Exception as exc:
                 logger.warning("WebSocket auth unexpected error: %s", exc)
-                return None
+                return None, None
 
-            return NotificationConsumer._get_user(user_id)
+            user = NotificationConsumer._get_user(user_id)
+            if user is None:
+                return None, None
+
+            tenant = NotificationConsumer._get_tenant_for_user(user)
+            return user, tenant
 
         return await validate_and_get_user(raw_token)
 
@@ -123,6 +131,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         except User.DoesNotExist:
             return None
 
+    @staticmethod
+    def _get_tenant_for_user(user):
+        from apps.tenants.models import TenantMembership
+
+        membership = TenantMembership.objects.filter(user=user).select_related("tenant").first()
+        return membership.tenant if membership else None
+
     async def _mark_read(self, notification_id):
         if not notification_id:
             return
@@ -132,10 +147,14 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         from apps.notifications.models import Notification
 
         @sync_to_async
-        def do_mark(nid, user):
-            Notification.objects.filter(pk=nid, user=user).update(read=True)
+        def do_mark(nid, user, tenant):
+            # Filter by tenant to prevent cross-tenant notification manipulation.
+            qs = Notification.objects.filter(pk=nid, user=user)
+            if tenant is not None:
+                qs = qs.filter(tenant=tenant)
+            qs.update(read=True)
 
-        await do_mark(notification_id, self.user)
+        await do_mark(notification_id, self.user, self.tenant)
         await self.send(
             json.dumps({"type": "marked_read", "notification_id": notification_id})
         )

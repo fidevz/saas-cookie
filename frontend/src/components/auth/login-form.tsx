@@ -36,7 +36,13 @@ export function LoginForm() {
     setIsTenantDomain(!!getCurrentTenantSlug());
   }, []);
 
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  // Validate callbackUrl to prevent open redirects. Accept only relative paths
+  // that start with / and do not start with // (protocol-relative URLs).
+  const rawCallbackUrl = searchParams.get("callbackUrl") || "";
+  const callbackUrl =
+    rawCallbackUrl.startsWith("/") && !rawCallbackUrl.startsWith("//")
+      ? rawCallbackUrl
+      : "/dashboard";
 
   // Auto-redirect when AuthInitializer establishes a session on this page
   // (e.g. landing here from the email-verification flow on a tenant subdomain).
@@ -60,7 +66,7 @@ export function LoginForm() {
     try {
       const { access, user, tenant_slug } = await login(email, password);
       setAuth(user, access, tenant_slug);
-      toast.success(`Welcome back, ${user.first_name}!`);
+      toast.success(t("welcomeBack", { name: user.first_name }));
 
       // Redirect to tenant subdomain if not already there
       if (tenant_slug && getCurrentTenantSlug() !== tenant_slug) {
@@ -77,7 +83,7 @@ export function LoginForm() {
         }
         setError(err.message);
       } else {
-        setError("Login failed");
+        setError(t("loginFailed"));
       }
     } finally {
       setLoading(false);
@@ -112,7 +118,7 @@ export function LoginForm() {
           <Input
             id="email"
             type="email"
-            placeholder="you@example.com"
+            placeholder={t("emailPlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -149,7 +155,7 @@ export function LoginForm() {
         )}
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing in..." : t("submit")}
+          {loading ? t("signingIn") : t("submit")}
         </Button>
       </form>
 

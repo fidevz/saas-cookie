@@ -113,7 +113,7 @@ class CreateCheckoutSessionView(APIView):
             session = stripe.checkout.Session.create(**session_params)
         except stripe.StripeError as exc:
             logger.error("Stripe checkout error: %s", exc)
-            raise ValidationError({"detail": str(exc)})
+            raise ValidationError({"detail": "Payment processing failed. Please try again."})
 
         return Response({"url": session.url, "session_id": session.id})
 
@@ -148,7 +148,7 @@ class CustomerPortalView(APIView):
             )
         except stripe.StripeError as exc:
             logger.error("Stripe portal error: %s", exc)
-            raise ValidationError({"detail": str(exc)})
+            raise ValidationError({"detail": "Failed to open billing portal. Please try again."})
 
         return Response({"url": portal_session.url})
 
@@ -179,7 +179,7 @@ class CancelSubscriptionView(APIView):
             )
         except stripe.StripeError as exc:
             logger.error("Stripe cancel error: %s", exc)
-            raise ValidationError({"detail": str(exc)})
+            raise ValidationError({"detail": "Failed to cancel subscription. Please try again."})
 
         subscription.status = Subscription.Status.CANCELLING
         subscription.save(update_fields=["status", "updated_at"])
@@ -227,13 +227,14 @@ class WebhookView(APIView):
         webhook_secret = settings.STRIPE_WEBHOOK_SECRET
 
         if not webhook_secret:
-            logger.warning("STRIPE_WEBHOOK_SECRET is not set — skipping signature check")
-            import json
-
-            try:
-                event = json.loads(payload)
-            except Exception:
-                return Response({"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(
+                "STRIPE_WEBHOOK_SECRET is not configured. "
+                "Set STRIPE_WEBHOOK_SECRET in the environment to enable webhook processing."
+            )
+            return Response(
+                {"error": "Webhook not configured"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         else:
             try:
                 event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)

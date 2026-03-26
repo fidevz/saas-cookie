@@ -118,11 +118,11 @@ export function RegisterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tosAccepted) {
-      setError("Please accept the terms of service to continue.");
+      setError(t("tosError"));
       return;
     }
     if (slugStatus === "taken" || slugStatus === "invalid") {
-      setError("Please choose an available workspace URL.");
+      setError(t("slugError"));
       return;
     }
     setError(null);
@@ -136,16 +136,16 @@ export function RegisterForm() {
 
       if (inviteToken) {
         // Redirect to the tenant subdomain's /auth/callback so cookies are set
-        // on the correct host. Setting them here (root domain) wouldn't carry
-        // over to the subdomain on localhost.
-        window.location.href = getTenantUrl(result.tenant_slug, `/auth/callback?access=${result.access}`);
+        // on the correct host. Use the one-time code (not the access token) in
+        // the URL to avoid token exposure in browser history and proxy logs.
+        window.location.href = getTenantUrl(result.tenant_slug, `/auth/callback?code=${result.code}`);
       } else {
         // New signup — send to "check your email" without authenticating.
         // Tokens are intentionally discarded; user must verify then log in.
         router.push(`/auth/check-email?email=${encodeURIComponent(form.email)}`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      setError(err instanceof Error ? err.message : t("registrationFailed"));
     } finally {
       setLoading(false);
     }
@@ -164,7 +164,7 @@ export function RegisterForm() {
       {/* Invite context banner */}
       {inviteToken && invitation?.tenant && (
         <div className="rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm text-center text-muted-foreground">
-          You&apos;re joining <strong className="text-foreground">{invitation.tenant.name}</strong>
+          {t("joiningWorkspace")} <strong className="text-foreground">{invitation.tenant.name}</strong>
         </div>
       )}
 
@@ -174,12 +174,12 @@ export function RegisterForm() {
           <>
             {/* Workspace name */}
             <div className="flex flex-col gap-2">
-              <Label htmlFor="company_name">Workspace name</Label>
+              <Label htmlFor="company_name">{t("workspaceName")}</Label>
               <Input
                 id="company_name"
                 name="company_name"
                 type="text"
-                placeholder="Acme Inc."
+                placeholder={t("workspaceNamePlaceholder")}
                 value={form.company_name}
                 onChange={handleChange}
                 required
@@ -190,14 +190,14 @@ export function RegisterForm() {
 
             {/* Workspace URL (slug) */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="slug">Workspace URL</Label>
+              <Label htmlFor="slug">{t("workspaceUrl")}</Label>
               <div className="flex items-center gap-0 rounded-md border border-input overflow-hidden focus-within:ring-2 focus-within:ring-ring">
                 <div className="relative flex-1">
                   <Input
                     id="slug"
                     name="slug"
                     type="text"
-                    placeholder="acme"
+                    placeholder={t("workspaceUrlPlaceholder")}
                     value={form.slug}
                     onChange={handleSlugChange}
                     required
@@ -216,7 +216,7 @@ export function RegisterForm() {
               </div>
               {slugStatus === "taken" && slugSuggestion && (
                 <p className="text-xs text-muted-foreground">
-                  Already taken.{" "}
+                  {t("slugTaken")}{" "}
                   <button
                     type="button"
                     className="underline text-foreground hover:text-foreground/80"
@@ -225,18 +225,18 @@ export function RegisterForm() {
                       setSlugEdited(true);
                     }}
                   >
-                    Use &ldquo;{slugSuggestion}&rdquo; instead
+                    {t("slugSuggestion", { suggestion: slugSuggestion })}
                   </button>
                 </p>
               )}
               {slugStatus === "invalid" && (
                 <p className="text-xs text-destructive">
-                  3–50 characters, lowercase letters, numbers, and hyphens only.
+                  {t("slugInvalid")}
                 </p>
               )}
               {slugStatus === "available" && (
                 <p className="text-xs text-green-600">
-                  {form.slug}.{baseDomain} is available
+                  {t("slugAvailable", { slug: form.slug, domain: baseDomain })}
                 </p>
               )}
             </div>
@@ -251,7 +251,7 @@ export function RegisterForm() {
               id="first_name"
               name="first_name"
               type="text"
-              placeholder="Jane"
+              placeholder={t("firstNamePlaceholder")}
               value={form.first_name}
               onChange={handleChange}
               required
@@ -263,7 +263,7 @@ export function RegisterForm() {
               id="last_name"
               name="last_name"
               type="text"
-              placeholder="Smith"
+              placeholder={t("lastNamePlaceholder")}
               value={form.last_name}
               onChange={handleChange}
               required
@@ -277,7 +277,7 @@ export function RegisterForm() {
             id="email"
             name="email"
             type="email"
-            placeholder="you@example.com"
+            placeholder={t("emailPlaceholder")}
             value={form.email}
             onChange={handleChange}
             required
@@ -338,7 +338,7 @@ export function RegisterForm() {
           className="w-full"
           disabled={loading || (!inviteToken && (slugStatus === "taken" || slugStatus === "invalid" || slugStatus === "checking"))}
         >
-          {loading ? "Creating account..." : t("submit")}
+          {loading ? t("creatingAccount") : t("submit")}
         </Button>
       </form>
 

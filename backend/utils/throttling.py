@@ -26,3 +26,15 @@ class EmailChangeThrottle(UserRateThrottle):
     """3 email change requests per hour per user."""
 
     scope = "email_change"
+
+
+class PasswordResetThrottle(AnonRateThrottle):
+    """3 password reset requests per hour per IP."""
+
+    scope = "password_reset"
+
+
+class VerifyEmailThrottle(AnonRateThrottle):
+    """10 email verification attempts per hour per IP."""
+
+    scope = "verify_email"

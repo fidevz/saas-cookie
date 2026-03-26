@@ -4,6 +4,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+
 # Prevent concurrent deploys
 concurrency:
   group: deploy-production
@@ -17,9 +20,10 @@ jobs:
     steps:
       - name: Trigger Coolify deploy
         run: |
-          curl --fail -X GET \
+          curl --fail --silent --show-error -X GET \
             "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}"
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
+            -o /dev/null
 
       - name: Notify on success
         if: success()

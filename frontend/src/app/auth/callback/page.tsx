@@ -2,11 +2,13 @@
 
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/stores/auth-store";
 import { exchangeCode, getProfile } from "@/lib/auth";
 import { toast } from "sonner";
 
 function CallbackHandler() {
+  const t = useTranslations("auth.callback");
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
@@ -17,7 +19,7 @@ function CallbackHandler() {
     const errorParam = searchParams.get("error");
 
     if (errorParam) {
-      toast.error("Google authentication failed. Please try again.");
+      toast.error(t("googleFailed"));
       router.push("/auth/login");
       return;
     }
@@ -27,11 +29,11 @@ function CallbackHandler() {
       exchangeCode(codeParam)
         .then(({ access, user }) => {
           setAuth(user, access);
-          toast.success(`Welcome, ${user.first_name}!`);
+          toast.success(t("welcome", { name: user.first_name }));
           router.push("/dashboard");
         })
         .catch(() => {
-          toast.error("Login code expired. Please sign in.");
+          toast.error(t("loginExpired"));
           router.push("/auth/login");
         });
       return;
@@ -51,7 +53,7 @@ function CallbackHandler() {
         router.push("/dashboard");
       })
       .catch(() => {
-        toast.error("Failed to load your profile. Please try again.");
+        toast.error(t("profileFailed"));
         router.push("/auth/login");
       });
   }, [searchParams, setAuth, router]);
@@ -60,7 +62,7 @@ function CallbackHandler() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
-        <p className="text-sm text-muted-foreground">Completing sign in...</p>
+        <p className="text-sm text-muted-foreground">{t("completingSignIn")}</p>
       </div>
     </div>
   );

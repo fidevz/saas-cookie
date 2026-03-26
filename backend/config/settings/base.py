@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # ---------------------------------------------------------------------------
 # Core
 # ---------------------------------------------------------------------------
-SECRET_KEY = config("SECRET_KEY", default="insecure-dev-secret-key-change-in-production")
+SECRET_KEY = config("SECRET_KEY")  # Required — no default; will raise if unset
 DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
@@ -167,6 +167,8 @@ REST_FRAMEWORK = {
         "register": "3/minute",
         "resend_verification": "12/hour",
         "email_change": "3/hour",
+        "password_reset": "3/hour",
+        "verify_email": "10/hour",
     },
 }
 
