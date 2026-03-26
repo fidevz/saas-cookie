@@ -176,7 +176,7 @@ for dir in "${DIRS_TO_COPY[@]}"; do
 done
 
 # Copy root-level files
-ROOT_FILES=("docker-compose.yml" "README.md" "CLAUDE.md" "SETUP.md" "RELEASE.md")
+ROOT_FILES=(".gitignore" "docker-compose.yml" "README.md" "CLAUDE.md" "SETUP.md" "RELEASE.md")
 for file in "${ROOT_FILES[@]}"; do
   if [[ -f "${SCRIPT_DIR}/${file}" ]]; then
     cp "${SCRIPT_DIR}/${file}" "${OUTPUT_DIR}/${file}"
