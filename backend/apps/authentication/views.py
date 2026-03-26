@@ -3,8 +3,10 @@ Authentication views: register, login, logout, token refresh, Google OAuth,
 password reset, email verification.
 """
 import logging
+import secrets
 
 from django.conf import settings
+from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes, force_str
@@ -64,6 +66,21 @@ def _clear_refresh_cookie(response: Response) -> None:
 def _tokens_for_user(user) -> tuple[str, RefreshToken]:
     refresh = RefreshToken.for_user(user)
     return str(refresh.access_token), refresh
+
+
+def _generate_login_code(user_id: int) -> str:
+    """Store a single-use, 60-second opaque code in Redis and return it."""
+    code = secrets.token_urlsafe(32)
+    cache.set(f"login_code:{code}", user_id, timeout=60)
+    return code
+
+
+def _tenant_slug_for_user(user) -> str | None:
+    from apps.tenants.models import TenantMembership
+    membership = (
+        TenantMembership.objects.select_related("tenant").filter(user=user).first()
+    )
+    return membership.tenant.slug if membership else None
 
 
 # ---------------------------------------------------------------------------
@@ -238,15 +255,37 @@ class VerifyEmailView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request: Request) -> Response:
+        from allauth.account.models import EmailAddress, EmailConfirmationHMAC
+
         key = request.data.get("key", "").strip()
         if not key:
             return Response({"detail": "Key is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        from allauth.account.models import EmailConfirmationHMAC, EmailAddress
-
+        # Try HMAC key first (stateless, most common).  from_key() returns None
+        # when the key is invalid OR when the email is already verified (it
+        # queries with verified=False).  We handle the already-verified case
+        # below so users get a helpful response on retry.
         confirmation = EmailConfirmationHMAC.from_key(key)
+
         if not confirmation:
-            # Fallback to DB-stored confirmation
+            # Check whether the key refers to an already-verified address before
+            # giving up — this happens when the view previously raised an
+            # exception after saving verified=True but before returning 200.
+            try:
+                from django.core import signing
+                from allauth.account import app_settings as allauth_settings
+                max_age = int(allauth_settings.EMAIL_CONFIRMATION_EXPIRE_DAYS * 86400)
+                pk = signing.loads(key, salt=allauth_settings.SALT, max_age=max_age)
+                ea = EmailAddress.objects.filter(pk=pk, verified=True).first()
+                if ea:
+                    # Already verified — treat as success so the user can log in.
+                    code = _generate_login_code(ea.user_id)
+                    tenant_slug = _tenant_slug_for_user(ea.user)
+                    return Response({"detail": "Email verified successfully.", "code": code, "tenant_slug": tenant_slug})
+            except Exception:
+                pass
+
+            # Fallback: DB-stored confirmation (legacy / non-HMAC flow)
             try:
                 from allauth.account.models import EmailConfirmation
                 confirmation = EmailConfirmation.objects.get(key=key)
@@ -259,21 +298,74 @@ class VerifyEmailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Verify directly on the EmailAddress record to avoid allauth's
+        # add_message() call which requires Django's session/messages middleware
+        # and can raise MessageFailure in API contexts.
+        email_address = confirmation.email_address
+        if email_address.verified:
+            code = _generate_login_code(email_address.user_id)
+            tenant_slug = _tenant_slug_for_user(email_address.user)
+            return Response({"detail": "Email verified successfully.", "code": code, "tenant_slug": tenant_slug})
+
+        email_address.verified = True
+        email_address.set_as_primary(conditional=True)
+        email_address.save(update_fields=["verified", "primary"])
+
+        # Fire the standard signal so any connected handlers run.
+        from allauth.account.models import EmailAddress as EA
+        from allauth.account import signals
+        signals.email_confirmed.send(
+            sender=EA,
+            request=request,
+            email_address=email_address,
+        )
+
+        logger.info("Email verified for user %s (%s)", email_address.user_id, email_address.email)
+        code = _generate_login_code(email_address.user_id)
+        tenant_slug = _tenant_slug_for_user(email_address.user)
+        return Response({"detail": "Email verified successfully.", "code": code, "tenant_slug": tenant_slug})
+
+
+class ExchangeCodeView(APIView):
+    """POST /api/v1/auth/exchange-code/ — redeem a one-time login code for JWT tokens."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request) -> Response:
+        code = request.data.get("code", "").strip()
+        if not code:
+            return Response({"detail": "Code is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        cache_key = f"login_code:{code}"
+        user_id = cache.get(cache_key)
+        if user_id is None:
+            return Response({"detail": "Invalid or expired code."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Delete before issuing tokens — single use even if response fails
+        cache.delete(cache_key)
+
         try:
-            email_address = confirmation.confirm(request)
-        except Exception:
-            return Response(
-                {"detail": "Invalid or expired confirmation link."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return Response({"detail": "Invalid or expired code."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not email_address:
-            return Response(
-                {"detail": "Invalid or expired confirmation link."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # Fire the login signal so handlers like the welcome notification run.
+        from django.contrib.auth.signals import user_logged_in
+        user_logged_in.send(sender=user.__class__, request=request, user=user)
+        user.refresh_from_db()
 
-        return Response({"detail": "Email verified successfully."})
+        access, refresh = _tokens_for_user(user)
+        response = Response({
+            "access": access,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+            },
+        })
+        _set_refresh_cookie(response, refresh)
+        return response
 
 
 class CheckSlugView(APIView):
@@ -284,6 +376,7 @@ class CheckSlugView(APIView):
     def get(self, request: Request) -> Response:
         from apps.authentication.serializers import RESERVED_SLUGS
         from apps.tenants.models import Tenant
+        from better_profanity import profanity
         import re
 
         slug = request.query_params.get("slug", "").strip().lower()
@@ -302,7 +395,7 @@ class CheckSlugView(APIView):
                 ),
             })
 
-        if slug in RESERVED_SLUGS:
+        if slug in RESERVED_SLUGS or profanity.contains_profanity(slug):
             suggestion = f"{slug}-app"
             return Response({"available": False, "suggestion": suggestion})
 
@@ -469,25 +562,39 @@ class PasswordResetRequestView(APIView):
             # Return 200 even if email not found to prevent enumeration
             return Response({"detail": "Password reset email sent if account exists."})
 
-        import html as html_lib
+        from django.contrib.sites.models import Site
+        from django.template.loader import render_to_string
+        from utils.email import send_email
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
         combined = f"{uid}-{token}"
         frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
         reset_url = f"{frontend_url}/auth/reset-password?token={combined}"
-        escaped_url = html_lib.escape(reset_url)
+        app_name = getattr(settings, "APP_NAME", "App")
 
-        from utils.email import send_email
+        try:
+            current_site = Site.objects.get_current(request)
+        except Exception:
+            current_site = type(
+                "_Site", (), {"name": app_name, "domain": settings.BASE_DOMAIN}
+            )()
+
+        context = {
+            "user": user,
+            "password_reset_url": reset_url,
+            "current_site": current_site,
+            # key is not exposed in context — only the full URL is shown
+        }
+
+        html_body = render_to_string("account/email/password_reset_key_message.html", context)
+        text_body = render_to_string("account/email/password_reset_key_message.txt", context)
 
         send_email(
             to=email,
-            subject="Password Reset Request",
-            html_body=(
-                f"<p>Click the link below to reset your password:</p>"
-                f"<p><a href='{escaped_url}'>{escaped_url}</a></p>"
-                f"<p>This link expires in 1 hour.</p>"
-            ),
+            subject=f"Reset your password — {app_name}",
+            html_body=html_body,
+            text_body=text_body,
         )
 
         return Response({"detail": "Password reset email sent if account exists."})

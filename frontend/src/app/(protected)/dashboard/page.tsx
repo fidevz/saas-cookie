@@ -97,8 +97,8 @@ export default function DashboardPage() {
               <Link key={link.href} href={link.href} className="group">
                 <Card className="h-full transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer">
                   <CardContent className="flex flex-col gap-3 p-6">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 group-hover:bg-slate-200 transition-colors">
-                      <Icon className="h-5 w-5 text-slate-700" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted group-hover:bg-muted/70 transition-colors">
+                      <Icon className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold">{link.title}</p>

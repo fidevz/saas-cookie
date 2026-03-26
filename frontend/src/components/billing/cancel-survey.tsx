@@ -44,7 +44,7 @@ export function CancelSurvey() {
   if (cancelled) {
     return (
       <div className="flex flex-col items-center gap-4 py-8 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <span className="text-2xl">✓</span>
         </div>
         <h2 className="text-xl font-semibold">Subscription cancelled</h2>

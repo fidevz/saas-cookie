@@ -31,7 +31,7 @@ export function RegisterForm() {
   const tCommon = useTranslations("common");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setAuth } = useAuthStore();
+  useAuthStore();
 
   const [form, setForm] = useState({
     company_name: "",
@@ -129,14 +129,21 @@ export function RegisterForm() {
     setLoading(true);
 
     try {
-      const { access, user, tenant_slug } = await register({
+      const result = await register({
         ...form,
         invite_token: inviteToken,
       });
-      setAuth(user, access, tenant_slug);
-      toast.success(`Welcome, ${user.first_name}! Your workspace is ready.`);
-      // Hard redirect to tenant subdomain
-      window.location.href = getTenantUrl(tenant_slug, "/dashboard");
+
+      if (inviteToken) {
+        // Redirect to the tenant subdomain's /auth/callback so cookies are set
+        // on the correct host. Setting them here (root domain) wouldn't carry
+        // over to the subdomain on localhost.
+        window.location.href = getTenantUrl(result.tenant_slug, `/auth/callback?access=${result.access}`);
+      } else {
+        // New signup — send to "check your email" without authenticating.
+        // Tokens are intentionally discarded; user must verify then log in.
+        router.push(`/auth/check-email?email=${encodeURIComponent(form.email)}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -185,9 +192,6 @@ export function RegisterForm() {
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="slug">Workspace URL</Label>
               <div className="flex items-center gap-0 rounded-md border border-input overflow-hidden focus-within:ring-2 focus-within:ring-ring">
-                <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-r border-input select-none whitespace-nowrap">
-                  {baseDomain}/
-                </span>
                 <div className="relative flex-1">
                   <Input
                     id="slug"
@@ -199,13 +203,16 @@ export function RegisterForm() {
                     required
                     minLength={3}
                     maxLength={50}
-                    pattern="^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$"
+                    pattern="^[a-z0-9][a-z0-9\-]{1,48}[a-z0-9]$"
                     className="border-0 focus-visible:ring-0 rounded-none pr-8"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2">
                     {slugIndicator()}
                   </div>
                 </div>
+                <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-l border-input select-none whitespace-nowrap">
+                  .{baseDomain}
+                </span>
               </div>
               {slugStatus === "taken" && slugSuggestion && (
                 <p className="text-xs text-muted-foreground">

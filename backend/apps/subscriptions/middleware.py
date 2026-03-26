@@ -17,6 +17,9 @@ _EXEMPT_PREFIXES = (
     "/api/v1/features/",
     "/api/v1/subscriptions/",  # Allow purchasing / checking status
     "/api/v1/support/",
+    "/api/v1/users/me",  # Profile — needed for auth initialization
+    "/api/v1/tenants/members/",  # Role check — needed for layout
+    "/api/v1/notifications/",  # Notifications — loaded in layout
     "/api/docs/",
     "/api/schema/",
 )

@@ -4,7 +4,7 @@ import { useFeatureStore } from "../feature-store";
 describe("useFeatureStore", () => {
   beforeEach(() => {
     useFeatureStore.setState({
-      flags: { TEAMS: false, BILLING: true, NOTIFICATIONS: false },
+      flags: { TEAMS: false, BILLING: true, NOTIFICATIONS: false, REQUIRE_SUBSCRIPTION: false },
       isLoaded: false,
     });
   });
@@ -18,7 +18,7 @@ describe("useFeatureStore", () => {
   });
 
   it("setFlags updates all flags and sets isLoaded=true", () => {
-    useFeatureStore.getState().setFlags({ TEAMS: true, BILLING: true, NOTIFICATIONS: true });
+    useFeatureStore.getState().setFlags({ TEAMS: true, BILLING: true, NOTIFICATIONS: true, REQUIRE_SUBSCRIPTION: false });
     const { flags, isLoaded } = useFeatureStore.getState();
     expect(flags.TEAMS).toBe(true);
     expect(flags.BILLING).toBe(true);
@@ -27,7 +27,7 @@ describe("useFeatureStore", () => {
   });
 
   it("setFlags can disable flags", () => {
-    useFeatureStore.getState().setFlags({ TEAMS: false, BILLING: false, NOTIFICATIONS: false });
+    useFeatureStore.getState().setFlags({ TEAMS: false, BILLING: false, NOTIFICATIONS: false, REQUIRE_SUBSCRIPTION: false });
     const { flags } = useFeatureStore.getState();
     expect(flags.TEAMS).toBe(false);
     expect(flags.BILLING).toBe(false);

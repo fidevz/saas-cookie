@@ -16,7 +16,11 @@ import {
 import { api } from "@/lib/api";
 import { Invitation } from "@/types";
 
-export function InviteForm() {
+interface InviteFormProps {
+  onInviteSent?: (invitation: Invitation) => void;
+}
+
+export function InviteForm({ onInviteSent }: InviteFormProps) {
   const t = useTranslations("team");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "member">("member");
@@ -26,10 +30,11 @@ export function InviteForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post<Invitation>("/teams/invitations/", { email, role });
+      const invitation = await api.post<Invitation>("/teams/invitations/", { email, role });
       toast.success(t("inviteSent"));
       setEmail("");
       setRole("member");
+      onInviteSent?.(invitation);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to send invitation");
     } finally {

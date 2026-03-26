@@ -7,7 +7,7 @@ const mockUser: User = {
   email: "test@example.com",
   first_name: "Test",
   last_name: "User",
-  is_first_login: false, tenant_slug: null,
+  is_first_login: false, tenant_slug: null, theme: "system",
 };
 
 describe("useAuthStore", () => {

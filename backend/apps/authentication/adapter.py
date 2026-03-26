@@ -19,30 +19,41 @@ class FrontendAccountAdapter(DefaultAccountAdapter):
 
     def send_confirmation_mail(self, request, emailconfirmation, signup):
         """
-        Send a plain HTML email so the confirmation URL is never broken by
+        Send an HTML email so the confirmation URL is never broken by
         quoted-printable line wrapping (which splits long plain-text URLs).
         """
+        from django.contrib.sites.models import Site
+        from django.template.loader import render_to_string
         from utils.email import send_email
 
         activate_url = self.get_email_confirmation_url(request, emailconfirmation)
         app_name = getattr(settings, "APP_NAME", "App")
         to = emailconfirmation.email_address.email
+        user = emailconfirmation.email_address.user
 
-        html_body = (
-            f"<p>Welcome to {app_name}!</p>"
-            f"<p>Click the button below to verify your email address:</p>"
-            f'<p><a href="{activate_url}" style="display:inline-block;padding:12px 24px;'
-            f"background:#0f172a;color:#fff;text-decoration:none;border-radius:6px;"
-            f'font-family:sans-serif;font-size:14px;">Verify email</a></p>'
-            f"<p>Or copy and paste this link:<br>"
-            f'<a href="{activate_url}">{activate_url}</a></p>'
-            f"<p>This link expires in 3 days.</p>"
+        try:
+            current_site = Site.objects.get_current(request)
+        except Exception:
+            current_site = type("_Site", (), {"name": app_name, "domain": settings.BASE_DOMAIN})()
+
+        template_prefix = (
+            "account/email/email_confirmation_signup_message"
+            if signup
+            else "account/email/email_confirmation_message"
         )
-        # text_body is intentionally empty — forces email clients and Mailhog
-        # to render the HTML part where the URL is not broken by QP line wrapping
+        context = {
+            "user": user,
+            "activate_url": activate_url,
+            "current_site": current_site,
+            "key": emailconfirmation.key,
+        }
+
+        html_body = render_to_string(f"{template_prefix}.html", context)
+        text_body = render_to_string(f"{template_prefix}.txt", context)
+
         send_email(
             to=to,
             subject=f"Confirm your email — {app_name}",
             html_body=html_body,
-            text_body=" ",  # single space avoids auto-text fallback from html stripping
+            text_body=text_body,
         )

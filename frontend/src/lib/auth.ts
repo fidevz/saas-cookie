@@ -59,8 +59,23 @@ export async function resendVerificationEmail(email: string): Promise<void> {
   await api.post<void>("/auth/resend-verification/", { email }, { skipAuth: true });
 }
 
-export async function verifyEmail(key: string): Promise<void> {
-  await api.post<void>("/auth/verify-email/", { key }, { skipAuth: true });
+export interface VerifyEmailResponse {
+  detail: string;
+  code: string;
+  tenant_slug: string | null;
+}
+
+export async function verifyEmail(key: string): Promise<VerifyEmailResponse> {
+  return api.post<VerifyEmailResponse>("/auth/verify-email/", { key }, { skipAuth: true });
+}
+
+export interface ExchangeCodeResponse {
+  access: string;
+  user: User;
+}
+
+export async function exchangeCode(code: string): Promise<ExchangeCodeResponse> {
+  return api.post<ExchangeCodeResponse>("/auth/exchange-code/", { code }, { skipAuth: true });
 }
 
 export async function checkSlug(slug: string): Promise<{ available: boolean; suggestion?: string; error?: string }> {

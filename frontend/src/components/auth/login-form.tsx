@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { GoogleButton } from "./google-button";
 import { EmailVerificationGate } from "./email-verification-gate";
+import { Loader2 } from "lucide-react";
 import { login } from "@/lib/auth";
 import { getTenantUrl, getCurrentTenantSlug } from "@/lib/tenant";
 import { useAuthStore } from "@/stores/auth-store";
@@ -21,14 +22,35 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
+  const isAuthLoading = useAuthStore((s) => s.isLoading);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [isTenantDomain, setIsTenantDomain] = useState(false);
+
+  React.useEffect(() => {
+    setIsTenantDomain(!!getCurrentTenantSlug());
+  }, []);
 
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+
+  // Auto-redirect when AuthInitializer establishes a session on this page
+  // (e.g. landing here from the email-verification flow on a tenant subdomain).
+  React.useEffect(() => {
+    if (!isAuthLoading && isAuthenticated) {
+      const slug = useAuthStore.getState().tenantSlug;
+      const currentSlug = getCurrentTenantSlug();
+      if (slug && currentSlug !== slug) {
+        window.location.href = getTenantUrl(slug, callbackUrl);
+      } else {
+        router.push(callbackUrl);
+      }
+    }
+  }, [isAuthLoading, isAuthenticated, callbackUrl, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +83,16 @@ export function LoginForm() {
       setLoading(false);
     }
   };
+
+  // While AuthInitializer is running, show a spinner so the form never flashes
+  // before we know whether the user is already authenticated.
+  if (isAuthLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   // Show verification gate instead of login form
   if (unverifiedEmail) {
@@ -131,15 +163,17 @@ export function LoginForm() {
 
       <GoogleButton />
 
-      <p className="text-center text-sm text-muted-foreground">
-        {t("noAccount")}{" "}
-        <Link
-          href="/auth/register"
-          className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80"
-        >
-          {t("signUp")}
-        </Link>
-      </p>
+      {!isTenantDomain && (
+        <p className="text-center text-sm text-muted-foreground">
+          {t("noAccount")}{" "}
+          <Link
+            href="/auth/register"
+            className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80"
+          >
+            {t("signUp")}
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

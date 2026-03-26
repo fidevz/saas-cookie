@@ -1,0 +1,18 @@
+Payment failed — {{ app_name }}
+
+Hi {{ user.first_name|default:user.email }},
+
+We were unable to process your payment{% if amount %} of {{ amount }}{% endif %} for your
+{{ app_name }} subscription.
+
+Please update your payment method to keep your account active:
+
+{{ billing_url }}
+
+We will retry the charge automatically after you update your billing details.
+
+If you need help, reply to this email and we'll sort it out together.
+
+---
+{{ app_name }}
+This is a transactional email. Please do not reply to this message.

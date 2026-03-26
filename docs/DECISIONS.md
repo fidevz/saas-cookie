@@ -143,15 +143,25 @@ Python package management has historically been fragmented (pip, pipenv, poetry)
 
 ---
 
-## ADR-006 — [Your next decision here]
+## ADR-006 — Periodic cleanup for unverified tenant slugs
 
-- **Date:**
-- **Status:**
+- **Date:** 2026-03-25
+- **Status:** Accepted
 
 ### Context
+When a user registers and selects a tenant slug, the `Tenant` record (with its unique slug) is created immediately. If the user never verifies their email, the slug is permanently blocked — enabling slug squatting with throwaway email addresses.
 
 ### Decision
+A Celery beat task (`cleanup_unverified_tenants`) runs every 6 hours and deletes any `Tenant` whose owner has no verified `EmailAddress` after a 48-hour grace period. The owner `User` is also deleted if they have no remaining tenants or memberships. The grace period is configurable via `UNVERIFIED_TENANT_CLEANUP_HOURS` in settings (default: 48).
+
+Run manually with: `uv run python manage.py cleanup_unverified_tenants`
 
 ### Alternatives considered
+- **Deferred tenant creation (Redis slug reservation):** Don't create the `Tenant` at registration — reserve the slug in Redis for ~4 hours, then create the tenant when the email is verified. Cleaner in theory but touches the critical registration flow, requires handling orphaned `User` records (which still get created), and needs a "create workspace" fallback page for users who verify after their reservation expires. Too much complexity for the marginal benefit.
+- **Aligned TTLs:** Make the email verification link expire at the same time as the slug reservation (~4 hours). Simpler, but unverified `User` records still accumulate and block re-registration with the same email.
 
 ### Consequences
+- Slugs from abandoned registrations are reclaimed within at most 48 hours after the cleanup runs
+- During the 48-hour grace period, a squatted slug is still unavailable — `CheckSlugView` suggests alternatives
+- Celery beat must be running in production for this to work (it already is for `check_trial_endings`)
+- Cascade behavior: deleting a `Tenant` cascades to `TenantMembership` and `Subscription`; `Tenant.owner` uses `on_delete=PROTECT` so the tenant must be deleted before the user

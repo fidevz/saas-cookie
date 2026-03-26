@@ -101,8 +101,8 @@ export default function InvitePage() {
           ) : (
             <Card>
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
-                  <Users className="h-7 w-7 text-slate-700" />
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                  <Users className="h-7 w-7 text-muted-foreground" />
                 </div>
                 <CardTitle>{t("title")}</CardTitle>
                 <CardDescription>
@@ -114,7 +114,7 @@ export default function InvitePage() {
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 {invitation && (
-                  <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-center text-muted-foreground">
+                  <div className="rounded-lg bg-muted/50 px-4 py-3 text-sm text-center text-muted-foreground">
                     Invitation for <strong>{invitation.email}</strong>
                   </div>
                 )}

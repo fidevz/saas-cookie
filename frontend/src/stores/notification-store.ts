@@ -7,10 +7,15 @@ import { wsClient } from "@/lib/ws";
 interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
-  setNotifications: (notifs: Notification[]) => void;
+  hasMore: boolean;
+  currentPage: number;
+  setNotifications: (notifs: Notification[], hasMore?: boolean) => void;
+  appendNotifications: (notifs: Notification[], hasMore: boolean) => void;
   addNotification: (notif: Notification) => void;
   markRead: (id: number) => void;
   markAllRead: () => void;
+  removeNotification: (id: number) => void;
+  clearRead: () => void;
   connectWebSocket: (token: string) => void;
   disconnectWebSocket: () => void;
 }
@@ -18,11 +23,28 @@ interface NotificationState {
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   unreadCount: 0,
+  hasMore: false,
+  currentPage: 1,
 
-  setNotifications: (notifs: Notification[]) =>
+  setNotifications: (notifs: Notification[], hasMore = false) =>
     set({
       notifications: notifs,
       unreadCount: notifs.filter((n) => !n.read).length,
+      hasMore,
+      currentPage: 1,
+    }),
+
+  appendNotifications: (notifs: Notification[], hasMore: boolean) =>
+    set((state) => {
+      const existingIds = new Set(state.notifications.map((n) => n.id));
+      const newNotifs = notifs.filter((n) => !existingIds.has(n.id));
+      const merged = [...state.notifications, ...newNotifs];
+      return {
+        notifications: merged,
+        unreadCount: merged.filter((n) => !n.read).length,
+        hasMore,
+        currentPage: state.currentPage + 1,
+      };
     }),
 
   addNotification: (notif: Notification) =>
@@ -48,6 +70,20 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       unreadCount: 0,
     })),
 
+  removeNotification: (id: number) =>
+    set((state) => {
+      const notifications = state.notifications.filter((n) => n.id !== id);
+      return {
+        notifications,
+        unreadCount: notifications.filter((n) => !n.read).length,
+      };
+    }),
+
+  clearRead: () =>
+    set((state) => ({
+      notifications: state.notifications.filter((n) => !n.read),
+    })),
+
   connectWebSocket: (token: string) => {
     wsClient.connect(token, (data: unknown) => {
       if (
@@ -56,7 +92,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         "type" in data &&
         (data as { type: string }).type === "notification"
       ) {
-        const payload = (data as unknown as { payload: Notification }).payload;
+        const payload = (data as unknown as { notification: Notification }).notification;
         get().addNotification(payload);
       }
     });

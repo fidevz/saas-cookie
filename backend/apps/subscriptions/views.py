@@ -98,7 +98,7 @@ class CreateCheckoutSessionView(APIView):
             "success_url": success_url + "?session_id={CHECKOUT_SESSION_ID}",
             "cancel_url": cancel_url,
             "client_reference_id": str(tenant.pk),
-            "metadata": {"tenant_slug": tenant.slug},
+            "metadata": {"tenant_slug": tenant.slug, "plan_id": str(plan.pk)},
         }
 
         if customer_id:
@@ -185,6 +185,34 @@ class CancelSubscriptionView(APIView):
         subscription.save(update_fields=["status", "updated_at"])
 
         return Response({"detail": "Subscription will be cancelled at period end."})
+
+
+class SelectFreePlanView(APIView):
+    """POST /api/v1/subscriptions/select-free/ — activate the Free plan for the tenant."""
+
+    permission_classes = [IsTenantAdmin]
+
+    def post(self, request: Request) -> Response:
+        _require_billing()
+        tenant = getattr(request, "tenant", None)
+        if not tenant:
+            raise NotFound("No tenant context.")
+
+        if Subscription.objects.filter(tenant=tenant).exists():
+            raise ValidationError({"detail": "Tenant already has a subscription."})
+
+        try:
+            free_plan = Plan.objects.get(amount=0, is_active=True)
+        except Plan.DoesNotExist:
+            raise NotFound("No free plan is available.")
+
+        subscription = Subscription.objects.create(
+            tenant=tenant,
+            plan=free_plan,
+            status=Subscription.Status.ACTIVE,
+            capabilities=free_plan.capabilities,  # snapshot at subscription time
+        )
+        return Response(SubscriptionSerializer(subscription).data, status=status.HTTP_201_CREATED)
 
 
 class WebhookView(APIView):

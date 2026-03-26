@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your email address is being changed</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+         style="background-color:#f4f4f5;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"
+               style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;
+                      overflow:hidden;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:32px 40px 0 40px;">
+              <p style="margin:0;font-size:18px;font-weight:700;color:#1a1a1a;">
+                {{ current_site.name }}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px 40px;">
+              <h1 style="margin:0 0 16px 0;font-size:24px;font-weight:700;color:#1a1a1a;">
+                Your email address is being changed
+              </h1>
+              <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#444444;">
+                Hi {{ user.first_name|default:user.email }},
+              </p>
+              <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#444444;">
+                A request was made to change your account email address to
+                <strong>{{ new_email }}</strong>. The change will take effect once confirmed
+                from the new address.
+              </p>
+              <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#444444;">
+                If this was you, no action is needed here. If you did <strong>not</strong>
+                make this request, click the button below to cancel it immediately.
+              </p>
+
+              <!-- CTA button -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="border-radius:6px;background-color:#000000;">
+                    <a href="{{ cancel_url }}"
+                       style="display:inline-block;padding:14px 28px;font-size:15px;
+                              font-weight:600;color:#ffffff;text-decoration:none;
+                              border-radius:6px;font-family:sans-serif;">
+                      Cancel email change
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:24px 0 0 0;font-size:13px;line-height:1.6;color:#888888;">
+                Or copy and paste this link into your browser:<br>
+                <a href="{{ cancel_url }}"
+                   style="color:#1a1a1a;word-break:break-all;">{{ cancel_url }}</a>
+              </p>
+              <p style="margin:16px 0 0 0;font-size:13px;color:#888888;">
+                This cancel link expires in 24 hours. If you believe your account has been
+                compromised, please reset your password immediately.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 40px;border-top:1px solid #f0f0f0;">
+              <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:1.6;">
+                This is a security notification sent by {{ current_site.name }}
+                ({{ current_site.domain }}).
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

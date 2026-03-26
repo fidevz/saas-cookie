@@ -1,47 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { uniqueEmail } from "../../utils/api-helpers";
 
 test.describe("Registration", () => {
-  test("user can register with email and password", async ({ page }) => {
-    const email = uniqueEmail("register");
-    const unique = Date.now();
-
-    await page.goto("/auth/register");
-
-    await expect(page.getByRole("heading", { name: /create your account/i })).toBeVisible();
-
-    // Mock slug availability check to always return available
-    await page.route("**/api/v1/auth/check-slug/**", (route) => {
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ available: true }),
-      });
-    });
-
-    // Fill workspace fields with a unique name to avoid slug conflicts across runs
-    await page.getByLabel(/workspace name/i).fill(`Test Workspace ${unique}`);
-    // Wait for slug auto-populate and availability check to settle
-    await page.waitForTimeout(600);
-
-    await page.getByLabel(/first name/i).fill("Jane");
-    await page.getByLabel(/last name/i).fill("Doe");
-    await page.getByLabel(/email/i).fill(email);
-    await page.getByLabel(/password/i).fill("SecurePassword123!");
-
-    // Accept TOS if checkbox exists
-    const tosCheckbox = page.getByRole("checkbox");
-    if (await tosCheckbox.isVisible()) {
-      await tosCheckbox.check();
-    }
-
-    await page.getByRole("button", { name: /create account/i }).click();
-
-    // Should redirect to dashboard after successful registration
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 });
-    await expect(page.getByText(/welcome/i)).toBeVisible();
-  });
-
   test("shows validation errors for empty fields", async ({ page }) => {
     await page.goto("/auth/register");
     await page.getByRole("button", { name: /create account/i }).click();

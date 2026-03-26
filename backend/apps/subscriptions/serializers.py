@@ -7,6 +7,11 @@ from apps.subscriptions.models import Plan, Subscription
 
 
 class PlanSerializer(serializers.ModelSerializer):
+    amount = serializers.SerializerMethodField()
+
+    def get_amount(self, obj):
+        return int(obj.amount * 100)
+
     class Meta:
         model = Plan
         fields = [
@@ -18,6 +23,7 @@ class PlanSerializer(serializers.ModelSerializer):
             "interval",
             "trial_days",
             "features",
+            "capabilities",
         ]
         read_only_fields = fields
 
@@ -33,6 +39,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "tenant_slug",
             "plan",
             "status",
+            "capabilities",
             "current_period_start",
             "current_period_end",
             "trial_end",

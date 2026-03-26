@@ -24,16 +24,21 @@
 - [ ] Pricing page is accurate with current plan details
 - [ ] Privacy Policy published and linked in footer
 - [ ] Terms of Service published and linked in footer
-- [ ] Cookie Policy published and cookie consent banner working
+- [ ] Cookie Policy page exists and is published (`/legal/cookies`)
+- [ ] Cookie consent banner working
 - [ ] Legal pages linked from signup flow
-- [ ] All placeholder content (`[PLACEHOLDER]`) replaced
+- [ ] All placeholder content (`[PLACEHOLDER]`) replaced — including company name, contact email, jurisdiction
 - [ ] No lorem ipsum anywhere in the product
+- [ ] Open Graph tags set (og:title, og:description, og:image) in root layout
+- [ ] `robots.txt` present and correct (disallows `/api/` and admin path)
+- [ ] `sitemap.xml` generated and submitted to Google Search Console
 
 ## Infrastructure & Security
 
 - [ ] Production environment fully configured (see `ops/DEPLOYMENT.md`)
 - [ ] `DEBUG=False` in production
 - [ ] All secrets in environment variables (not in code)
+- [ ] `AUTH_COOKIE_DOMAIN` set to `.yourdomain.com` (leading dot) for cross-subdomain auth cookies
 - [ ] SSL/TLS active on all domains including wildcard
 - [ ] CORS locked to production domains only
 - [ ] Admin URL changed from default
@@ -41,6 +46,7 @@
 - [ ] Uptime monitoring configured (UptimeRobot / Better Uptime / etc.)
 - [ ] Sentry configured and receiving events
 - [ ] Database backups configured and tested (restore at least once)
+- [ ] E2E test suite passes against staging environment before go-live
 
 ## Payments
 
@@ -55,8 +61,11 @@
 
 - [ ] Resend domain verified (DNS records added)
 - [ ] From email is a real, monitored inbox
-- [ ] Welcome email sends correctly
-- [ ] Password reset email sends correctly
+- [ ] Email verification email sends correctly and link works
+- [ ] Password reset email sends correctly and link works
+- [ ] Team invitation email sends correctly
+- [ ] Subscription welcome email sends after first payment
+- [ ] Payment failed dunning email sends on invoice failure
 - [ ] All email templates reviewed for formatting on mobile
 - [ ] Unsubscribe link works in all marketing emails
 - [ ] SPF, DKIM, DMARC records configured for your domain

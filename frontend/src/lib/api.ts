@@ -37,18 +37,29 @@ async function handleRefresh(): Promise<string | null> {
   }
 }
 
-function extractErrorMessage(data: ApiError): string {
-  if (data.detail) return data.detail;
-  const messages: string[] = [];
-  for (const key in data) {
-    const val = data[key];
-    if (Array.isArray(val)) {
-      messages.push(`${key}: ${val.join(", ")}`);
-    } else if (typeof val === "string") {
-      messages.push(val);
-    }
+function extractErrorMessage(data: unknown): string {
+  if (typeof data === "string") return data;
+  if (Array.isArray(data)) {
+    return data.map((item) => extractErrorMessage(item)).join(". ");
   }
-  return messages.join(". ") || "An unexpected error occurred";
+  if (data && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    // Unwrap envelope: {"error": "...", "detail": <string|object>}
+    if (obj.detail !== undefined) return extractErrorMessage(obj.detail);
+    const messages: string[] = [];
+    for (const key in obj) {
+      const val = obj[key];
+      const msg = extractErrorMessage(val);
+      // Skip noisy field prefixes for non-field errors
+      if (key === "non_field_errors" || key === "detail") {
+        messages.push(msg);
+      } else {
+        messages.push(`${key}: ${msg}`);
+      }
+    }
+    return messages.join(". ");
+  }
+  return "An unexpected error occurred";
 }
 
 class ApiClient {
@@ -82,6 +93,12 @@ class ApiClient {
       signal: fetchOptions.signal,
     });
 
+    // Handle 402 — subscription required.
+    // The paywall is handled at the layout level, so just throw and let callers handle it.
+    if (response.status === 402) {
+      throw new Error("An active subscription is required.");
+    }
+
     // Handle 401 with token refresh
     if (response.status === 401 && !skipRefresh && !skipAuth) {
       const newToken = await handleRefresh();
@@ -96,7 +113,7 @@ class ApiClient {
     }
 
     if (!response.ok) {
-      let errorData: ApiError = {};
+      let errorData: unknown = {};
       try {
         errorData = await response.json();
       } catch {

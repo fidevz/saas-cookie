@@ -2,9 +2,22 @@
 Celery tasks for team invitations.
 """
 import logging
+from urllib.parse import urlparse
 
 from celery import shared_task
 from django.conf import settings
+from django.template.loader import render_to_string
+
+
+def _tenant_invite_url(tenant_slug: str, token: str) -> str:
+    """Return the invite accept URL on the tenant's subdomain."""
+    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+    base_domain = getattr(settings, "BASE_DOMAIN", "localhost")
+    parsed = urlparse(frontend_url)
+    host = f"{tenant_slug}.{base_domain}"
+    if parsed.port:
+        host = f"{host}:{parsed.port}"
+    return f"{parsed.scheme}://{host}/invite/{token}"
 
 logger = logging.getLogger(__name__)
 
@@ -24,33 +37,30 @@ def send_invitation_email(self, invitation_id: int) -> None:
         return
 
     app_name = settings.APP_NAME
-    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
-    accept_url = f"{frontend_url}/invite/{invitation.token}"
+    accept_url = _tenant_invite_url(invitation.tenant.slug, invitation.token)
     invited_by_name = (
         invitation.invited_by.full_name if invitation.invited_by else app_name
     )
 
+    context = {
+        "app_name": app_name,
+        "inviter_name": invited_by_name,
+        "team_name": invitation.tenant.name,
+        "invitation_url": accept_url,
+        "role": invitation.role,
+    }
+
     subject = f"You've been invited to join {invitation.tenant.name} on {app_name}"
-    html_body = f"""
-    <h2>You've been invited!</h2>
-    <p>{invited_by_name} has invited you to join <strong>{invitation.tenant.name}</strong>
-    on {app_name} as a <strong>{invitation.role}</strong>.</p>
-    <p>
-        <a href="{accept_url}" style="
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #4F46E5;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-        ">Accept Invitation</a>
-    </p>
-    <p>This invitation expires in 48 hours.</p>
-    <p>If you did not expect this email, you can ignore it.</p>
-    """
+    html_body = render_to_string("teams/email/invitation.html", context)
+    text_body = render_to_string("teams/email/invitation.txt", context)
 
     try:
-        send_email(to=invitation.email, subject=subject, html_body=html_body)
+        send_email(
+            to=invitation.email,
+            subject=subject,
+            html_body=html_body,
+            text_body=text_body,
+        )
         logger.info("Invitation email sent to %s (invitation %s)", invitation.email, invitation_id)
     except Exception as exc:
         logger.warning("Failed to send invitation email: %s", exc)

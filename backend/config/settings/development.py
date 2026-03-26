@@ -7,6 +7,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1", ".localhost"]
 
+# Always use localhost as the base domain in development so that
+# TenantMiddleware resolves *.localhost subdomains correctly.
+# The BASE_DOMAIN env var is only meaningful in production.
+BASE_DOMAIN = "localhost"
+
 # Allow all origins in development
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -17,12 +22,12 @@ EMAIL_PORT = 1025
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = False
 
-# Use in-memory channel layer so Redis isn't required in dev
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
-    },
-}
+# Note: we intentionally do NOT override CHANNEL_LAYERS here.
+# The base settings use channels_redis (Redis-backed), which is required for
+# WebSocket messages to be delivered across async contexts (HTTP → WS consumer).
+# InMemoryChannelLayer silently breaks real-time delivery because each async
+# context gets its own isolated in-memory store. Redis must be running locally
+# to use real-time notifications in development.
 
 # JWT cookies don't need Secure flag over HTTP in dev
 SIMPLE_JWT = {
@@ -35,7 +40,9 @@ REST_AUTH = {
     "JWT_AUTH_SECURE": False,
 }
 
-# Local database override (can also be set via DATABASE_URL in .env)
+# Hardcoded local database — this takes precedence over DATABASE_URL in .env.
+# new-project.sh replaces "saas_boilerplate" with your project name automatically.
+# USER "" uses peer/ident auth (macOS default). Set to "postgres" if needed.
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -56,6 +63,7 @@ REST_FRAMEWORK = {
         "login": "1000/minute",
         "register": "1000/minute",
         "resend_verification": "1000/hour",
+        "email_change": "1000/hour",
     },
 }
 

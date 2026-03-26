@@ -1,8 +1,12 @@
 """
 Tests for user profile views.
 """
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth import get_user_model
+from django.core import signing
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -74,3 +78,38 @@ class TestProfileView:
         url = reverse("user-profile")
         response = client.put(url, {"first_name": "X", "last_name": "Y"})
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+
+def _make_email_change_token(user, new_email):
+    from apps.users.views import EMAIL_CHANGE_MAX_AGE, EMAIL_CHANGE_SALT
+    return signing.dumps({"uid": user.pk, "email": new_email}, salt=EMAIL_CHANGE_SALT)
+
+
+@pytest.mark.django_db
+class TestEmailChangeConfirmStripeSync:
+    url = "/api/v1/users/me/email/confirm/"
+
+    @patch("apps.subscriptions.tasks.sync_stripe_customer_email.delay")
+    def test_dispatches_stripe_sync_task_on_confirm(self, mock_delay, user):
+        user.pending_email = "confirmed@example.com"
+        user.save(update_fields=["pending_email"])
+        token = _make_email_change_token(user, "confirmed@example.com")
+
+        client = APIClient()
+        response = client.post(self.url, {"token": token})
+
+        assert response.status_code == status.HTTP_200_OK
+        mock_delay.assert_called_once_with(user.pk, "confirmed@example.com")
+
+    @patch("apps.subscriptions.tasks.sync_stripe_customer_email.delay")
+    def test_does_not_dispatch_when_billing_disabled(self, mock_delay, user):
+        user.pending_email = "confirmed@example.com"
+        user.save(update_fields=["pending_email"])
+        token = _make_email_change_token(user, "confirmed@example.com")
+
+        client = APIClient()
+        with override_settings(FEATURE_FLAGS={"TEAMS": True, "BILLING": False, "NOTIFICATIONS": True}):
+            response = client.post(self.url, {"token": token})
+
+        assert response.status_code == status.HTTP_200_OK
+        mock_delay.assert_not_called()

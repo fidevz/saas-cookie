@@ -58,13 +58,17 @@ class TestSupportView:
         payload = {**self.valid_payload, "name": ""}
         response = client.post(self.url, payload, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "name" in response.data
+        # Custom exception handler wraps validation errors under "detail"
+        assert response.data["error"] == "validation_error"
+        assert "name" in response.data["detail"]
 
     def test_rejects_invalid_email(self, client):
         payload = {**self.valid_payload, "email": "not-an-email"}
         response = client.post(self.url, payload, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "email" in response.data
+        # Custom exception handler wraps validation errors under "detail"
+        assert response.data["error"] == "validation_error"
+        assert "email" in response.data["detail"]
 
     def test_rejects_missing_message(self, client):
         payload = {**self.valid_payload, "message": ""}

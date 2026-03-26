@@ -7,7 +7,18 @@ import { resendVerificationEmail } from "@/lib/auth";
 import { toast } from "sonner";
 
 const COOLDOWN_SECONDS = 300; // 5 minutes
-const STORAGE_KEY = "resend_verification_ts";
+const STORAGE_KEY = "email_verification_sent_at";
+
+/** Read remaining cooldown seconds from localStorage (client-side only). */
+function getRemainingSeconds(): number {
+  if (typeof window === "undefined") return 0;
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return 0;
+  const sentAt = parseInt(raw, 10);
+  if (isNaN(sentAt)) return 0;
+  const elapsed = Math.floor((Date.now() - sentAt) / 1000);
+  return Math.max(0, COOLDOWN_SECONDS - elapsed);
+}
 
 interface Props {
   email: string;
@@ -15,15 +26,16 @@ interface Props {
 }
 
 export function EmailVerificationGate({ email, onBack }: Props) {
-  const [secondsLeft, setSecondsLeft] = useState(0);
+  // Start with COOLDOWN_SECONDS as a conservative initial value to avoid a
+  // flash of the enabled button before localStorage is read in the effect.
+  const [secondsLeft, setSecondsLeft] = useState(COOLDOWN_SECONDS);
   const [sending, setSending] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
-  // Initialize countdown from localStorage
+  // Initialize countdown from localStorage (runs only on the client after mount)
   useEffect(() => {
-    const lastSent = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
-    const elapsed = Math.floor((Date.now() - lastSent) / 1000);
-    const remaining = Math.max(0, COOLDOWN_SECONDS - elapsed);
-    setSecondsLeft(remaining);
+    setSecondsLeft(getRemainingSeconds());
+    setInitialized(true);
   }, []);
 
   // Tick
@@ -51,7 +63,9 @@ export function EmailVerificationGate({ email, onBack }: Props) {
     setSending(true);
     try {
       await resendVerificationEmail(email);
-      localStorage.setItem(STORAGE_KEY, Date.now().toString());
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, Date.now().toString());
+      }
       setSecondsLeft(COOLDOWN_SECONDS);
       toast.success("Verification email sent. Check your inbox.");
     } catch {
@@ -79,7 +93,7 @@ export function EmailVerificationGate({ email, onBack }: Props) {
       <div className="flex flex-col gap-3 w-full">
         <Button
           onClick={handleResend}
-          disabled={secondsLeft > 0 || sending}
+          disabled={!initialized || secondsLeft > 0 || sending}
           variant="outline"
           className="w-full"
         >

@@ -152,19 +152,19 @@ Available at `/api/docs/` (Swagger UI) and `/api/schema/` (raw OpenAPI JSON) whe
 cd frontend
 
 # Install dependencies
-npm install     # or pnpm install
+pnpm install
 
 # Development server
-npm run dev     # http://localhost:3000
+pnpm dev        # http://localhost:3000
 
 # Type checking
-npm run type-check
+pnpm type-check
 
 # Lint
-npm run lint
+pnpm lint
 
 # Production build
-npm run build
+pnpm build
 ```
 
 ### Environment Variables (frontend/.env)
@@ -246,22 +246,24 @@ Three flags control major features — all default to `True`:
 
 ---
 
-## File Storage (MinIO)
+## File Storage
 
-MinIO is an S3-compatible self-hosted storage server included in `docker-compose.yml`.
+**Local development:** `USE_S3=False` (default) — files are written to local disk. No additional setup required.
 
-Toggle with `USE_S3=True` in `backend/.env`. When enabled, Django uses `django-storages` with `S3Boto3Storage` pointing to the MinIO container.
+**Production (Coolify):** MinIO is bundled in `docker-compose.yml` as an S3-compatible store. Set `USE_S3=True` and configure the env vars below. Django uses `django-storages` with `S3Boto3Storage` pointing to the MinIO container.
+
+> `docker-compose.yml` is **production-only** — do not run it locally. MinIO is only needed when testing S3 behaviour explicitly.
 
 | Env var | Description |
 |---------|-------------|
-| `USE_S3` | `True` to use MinIO, `False` for local disk |
+| `USE_S3` | `True` to use MinIO/S3, `False` for local disk (dev default) |
 | `MINIO_ROOT_USER` | Access key (also used as AWS_ACCESS_KEY_ID) |
 | `MINIO_ROOT_PASSWORD` | Secret key |
 | `MINIO_BUCKET` | Bucket name (default: `media`) |
-| `MINIO_ENDPOINT` | Internal URL (`http://minio:9000` in Docker) |
+| `MINIO_ENDPOINT` | Internal Docker URL (`http://minio:9000`) |
 | `MINIO_PUBLIC_URL` | Public URL for serving files |
 
-MinIO Console: `https://storage.yourdomain.com` (port 9001)
+MinIO Console in production: `https://storage.yourdomain.com` (port 9001)
 
 ## Initial Setup
 
@@ -356,4 +358,4 @@ After running the script:
 3. Complete `marketing/context/PRODUCT.md` and `marketing/context/AUDIENCE.md`
 4. Set real values in `marketing/strategy/BUDGET.md` and `marketing/decisions/THRESHOLDS.md`
 5. Run `make db-reset` in `backend/`
-6. Run `npm install && npm run dev` in `frontend/`
+6. Run `pnpm install && pnpm dev` in `frontend/`

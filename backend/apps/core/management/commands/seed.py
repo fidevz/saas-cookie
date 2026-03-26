@@ -13,6 +13,21 @@ User = get_user_model()
 
 PLANS = [
     {
+        "name": "Free",
+        "stripe_price_id": None,
+        "stripe_product_id": "",
+        "amount": "0.00",
+        "currency": "usd",
+        "interval": "month",
+        "trial_days": 0,
+        "is_active": True,
+        "features": [
+            "1 team member",
+            "100 MB storage",
+            "Community support",
+        ],
+    },
+    {
         "name": "Starter",
         "stripe_price_id": "price_starter_monthly",
         "stripe_product_id": "prod_starter",
@@ -65,10 +80,17 @@ class Command(BaseCommand):
         from apps.subscriptions.models import Plan
 
         for plan_data in PLANS:
-            plan, created = Plan.objects.update_or_create(
-                stripe_price_id=plan_data["stripe_price_id"],
-                defaults=plan_data,
-            )
+            if plan_data["stripe_price_id"] is None:
+                # Free plan has no Stripe price — look up by name + zero amount
+                plan, created = Plan.objects.update_or_create(
+                    name=plan_data["name"], amount=0,
+                    defaults=plan_data,
+                )
+            else:
+                plan, created = Plan.objects.update_or_create(
+                    stripe_price_id=plan_data["stripe_price_id"],
+                    defaults=plan_data,
+                )
             verb = "Created" if created else "Updated"
             self.stdout.write(f"  {verb} plan: {plan.name}")
 

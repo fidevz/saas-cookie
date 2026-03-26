@@ -64,6 +64,14 @@
       "password": "New password",
       "submit": "Reset password",
       "success": "Password reset successfully"
+    },
+    "checkEmail": {
+      "title": "Check your email",
+      "subtitle": "We sent a verification link to your email",
+      "body": "Click the link in the email to verify your account. If you don't see it, check your spam folder.",
+      "resend": "Resend verification email",
+      "resent": "Verification email sent!",
+      "backToLogin": "Back to sign in"
     }
   },
   "landing": {
@@ -124,6 +132,10 @@
       },
       "confirm": "Cancel subscription",
       "keep": "Keep subscription"
+    },
+    "upgrade": {
+      "title": "Upgrade your plan",
+      "subtitle": "Get more features by upgrading to a higher plan."
     }
   },
   "team": {
@@ -138,12 +150,25 @@
     "sendInvite": "Send invite",
     "inviteSent": "Invitation sent!",
     "removeConfirm": "Are you sure you want to remove this member?",
-    "changeRole": "Change role"
+    "changeRole": "Change role",
+    "pendingInvitation": "Pending invitation",
+    "invited": "Invited",
+    "cancelInvite": "Cancel invitation",
+    "cancelInviteConfirm": "Are you sure you want to cancel this invitation?",
+    "inviteCancelled": "Invitation cancelled."
   },
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all as read",
+    "clearAllRead": "Clear all read",
+    "viewAll": "View all notifications",
+    "deleteNotification": "Delete notification",
     "empty": "No notifications",
+    "loadingMore": "Loading more...",
+    "cleared": "Read notifications cleared",
+    "deleted": "Notification deleted",
+    "clearFailed": "Failed to clear notifications",
+    "deleteFailed": "Failed to delete notification",
     "welcome": {
       "title": "Welcome to {appName}!",
       "body": "We're glad you're here. Explore the dashboard to get started."
@@ -177,6 +202,16 @@
     "accept": "Accept invitation",
     "expired": "This invitation has expired",
     "alreadyMember": "You're already a member"
+  },
+  "settings": {
+    "appearance": {
+      "title": "Appearance",
+      "label": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "toggleLabel": "Toggle theme"
+    }
   },
   "errors": {
     "notFound": {

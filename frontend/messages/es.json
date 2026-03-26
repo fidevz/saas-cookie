@@ -64,6 +64,14 @@
       "password": "Nueva contraseña",
       "submit": "Restablecer contraseña",
       "success": "Contraseña restablecida exitosamente"
+    },
+    "checkEmail": {
+      "title": "Revisa tu correo",
+      "subtitle": "Te enviamos un enlace de verificación a tu correo",
+      "body": "Haz clic en el enlace del correo para verificar tu cuenta. Si no lo ves, revisa tu carpeta de spam.",
+      "resend": "Reenviar correo de verificación",
+      "resent": "¡Correo de verificación enviado!",
+      "backToLogin": "Volver a iniciar sesión"
     }
   },
   "landing": {
@@ -124,6 +132,10 @@
       },
       "confirm": "Cancelar suscripción",
       "keep": "Mantener suscripción"
+    },
+    "upgrade": {
+      "title": "Mejora tu plan",
+      "subtitle": "Obtén más funciones actualizando a un plan superior."
     }
   },
   "team": {
@@ -138,12 +150,25 @@
     "sendInvite": "Enviar invitación",
     "inviteSent": "¡Invitación enviada!",
     "removeConfirm": "¿Estás seguro de que quieres eliminar a este miembro?",
-    "changeRole": "Cambiar rol"
+    "changeRole": "Cambiar rol",
+    "pendingInvitation": "Invitación pendiente",
+    "invited": "Invitado",
+    "cancelInvite": "Cancelar invitación",
+    "cancelInviteConfirm": "¿Estás seguro de que quieres cancelar esta invitación?",
+    "inviteCancelled": "Invitación cancelada."
   },
   "notifications": {
     "title": "Notificaciones",
     "markAllRead": "Marcar todo como leído",
+    "clearAllRead": "Eliminar leídas",
+    "viewAll": "Ver todas las notificaciones",
+    "deleteNotification": "Eliminar notificación",
     "empty": "Sin notificaciones",
+    "loadingMore": "Cargando más...",
+    "cleared": "Notificaciones leídas eliminadas",
+    "deleted": "Notificación eliminada",
+    "clearFailed": "No se pudieron eliminar las notificaciones",
+    "deleteFailed": "No se pudo eliminar la notificación",
     "welcome": {
       "title": "¡Bienvenido a {appName}!",
       "body": "Nos alegra que estés aquí. Explora el panel para comenzar."
@@ -177,6 +202,16 @@
     "accept": "Aceptar invitación",
     "expired": "Esta invitación ha expirado",
     "alreadyMember": "Ya eres miembro"
+  },
+  "settings": {
+    "appearance": {
+      "title": "Apariencia",
+      "label": "Tema",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema",
+      "toggleLabel": "Cambiar tema"
+    }
   },
   "errors": {
     "notFound": {

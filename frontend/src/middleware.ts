@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const PUBLIC_PATHS = ["/", "/pricing", "/support"];
 
-const PUBLIC_PATH_PREFIXES = ["/auth/", "/legal/", "/invite/"];
+const PUBLIC_PATH_PREFIXES = ["/auth/", "/legal/", "/invite/", "/settings/confirm-email", "/settings/cancel-email-change"];
 
 const PROTECTED_PATH_PREFIXES = ["/dashboard", "/billing", "/settings"];
 
@@ -36,6 +36,13 @@ export async function middleware(request: NextRequest) {
   const hasSession = request.cookies.has("auth_session");
   const tenantSlug = request.cookies.get("tenant_slug")?.value;
 
+  // On a tenant subdomain, never show the landing page.
+  // Redirect root path to the dashboard (authenticated) or login (unauthenticated).
+  if (!isRootDomain && pathname === "/") {
+    const target = hasSession ? "/dashboard" : "/auth/login";
+    return NextResponse.redirect(new URL(target, request.url));
+  }
+
   // Authenticated user on root domain trying to access a protected route:
   // redirect to their tenant subdomain.
   if (isRootDomain && hasSession && tenantSlug && isProtectedPath(pathname)) {
@@ -45,8 +52,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Redirect authenticated users away from auth pages
-  if (isAuthPath(pathname) && hasSession) {
+  // Redirect authenticated users away from auth pages.
+  // Exceptions: verify-email (newly registered users need to verify with an active session)
+  // and check-email (shown right after registration before any session is set,
+  // but guard against edge cases where a prior session cookie exists).
+  if (
+    isAuthPath(pathname) &&
+    hasSession &&
+    !pathname.startsWith("/auth/verify-email/") &&
+    !pathname.startsWith("/auth/check-email")
+  ) {
     // If we know the tenant slug, go straight to their subdomain
     if (tenantSlug && isRootDomain) {
       const port = hostname.includes(":") ? `:${hostname.split(":")[1]}` : "";

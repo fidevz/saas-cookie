@@ -89,6 +89,13 @@ echo ""
 print_step "Project Details"
 
 PROJECT_NAME=$(ask "Project name (snake_case, e.g. my_saas)" "my_saas")
+
+# Validate: only lowercase letters, digits, and underscores
+if [[ ! "$PROJECT_NAME" =~ ^[a-z][a-z0-9_]*$ ]]; then
+  print_error "Project name must be lowercase letters, digits, and underscores only (no spaces, hyphens, or special chars)."
+  exit 1
+fi
+
 PROJECT_DISPLAY_NAME=$(ask "Display name (e.g. My SaaS)" "My SaaS")
 DOMAIN=$(ask "Production domain (e.g. myapp.com)" "myapp.com")
 ADMIN_URL=$(ask "Django admin URL slug (e.g. admin-secret)" "admin-secret")
@@ -146,7 +153,7 @@ mkdir -p "$OUTPUT_DIR"
 # --- Copy boilerplate ---
 print_step "Copying boilerplate..."
 
-DIRS_TO_COPY=("backend" "frontend" "testing" ".github")
+DIRS_TO_COPY=("backend" "frontend" "testing" ".github" "docs" "ops")
 
 for dir in "${DIRS_TO_COPY[@]}"; do
   if [[ -d "${SCRIPT_DIR}/${dir}" ]]; then
@@ -154,6 +161,15 @@ for dir in "${DIRS_TO_COPY[@]}"; do
     print_info "Copied ${dir}/"
   else
     print_info "Skipping ${dir}/ (not found)"
+  fi
+done
+
+# Copy root-level files
+ROOT_FILES=("docker-compose.yml" "README.md" "CLAUDE.md" "SETUP.md" "RELEASE.md")
+for file in "${ROOT_FILES[@]}"; do
+  if [[ -f "${SCRIPT_DIR}/${file}" ]]; then
+    cp "${SCRIPT_DIR}/${file}" "${OUTPUT_DIR}/${file}"
+    print_info "Copied ${file}"
   fi
 done
 
@@ -168,20 +184,21 @@ print_step "Configuring project..."
 # Files to process for placeholder replacement
 find "$OUTPUT_DIR" -type f \
   \( -name "*.py" -o -name "*.ts" -o -name "*.tsx" -o -name "*.json" \
-     -o -name "*.yml" -o -name "*.yaml" -o -name "*.md" -o -name "*.env.example" \
-     -o -name "*.sh" -o -name "Makefile" -o -name "Procfile" \) \
+     -o -name "*.toml" -o -name "*.yml" -o -name "*.yaml" -o -name "*.md" \
+     -o -name "*.env.example" -o -name "*.sh" -o -name "Makefile" \
+     -o -name "Procfile" -o -name "robots.txt" \) \
   ! -path "*/node_modules/*" \
   ! -path "*/.git/*" \
   ! -path "*/__pycache__/*" \
   ! -name "pnpm-lock.yaml" \
   -print0 | while IFS= read -r -d '' file; do
-    # Run sed replacements
     sed -i.bak \
       -e "s|{{PROJECT_NAME}}|${PROJECT_NAME}|g" \
       -e "s|{{PROJECT_DISPLAY_NAME}}|${PROJECT_DISPLAY_NAME}|g" \
       -e "s|{{DOMAIN}}|${DOMAIN}|g" \
       -e "s|{{ADMIN_URL}}|${ADMIN_URL}|g" \
       -e "s|{{APP_NAME}}|${PROJECT_DISPLAY_NAME}|g" \
+      -e "s|saas_boilerplate|${PROJECT_NAME}|g" \
       "$file" && rm -f "${file}.bak"
   done
 
@@ -197,11 +214,12 @@ if [[ -f "${OUTPUT_DIR}/backend/.env.example" ]]; then
   # Fill in generated values
   sed -i.bak \
     -e "s|SECRET_KEY=change-me-generate-with-python-secrets|SECRET_KEY=${SECRET_KEY}|" \
-    -e "s|DATABASE_URL=postgres://user:password@localhost:5432/dbname|DATABASE_URL=postgres://localhost:5432/${PROJECT_NAME}|" \
+    -e "s|DATABASE_URL=postgres://user:password@localhost:5432/dbname|DATABASE_URL=postgres://postgres@localhost:5432/${PROJECT_NAME}|" \
     -e "s|FEATURE_TEAMS=true|FEATURE_TEAMS=${ENABLE_TEAMS}|" \
     -e "s|FEATURE_BILLING=true|FEATURE_BILLING=${ENABLE_BILLING}|" \
     -e "s|FEATURE_NOTIFICATIONS=true|FEATURE_NOTIFICATIONS=${ENABLE_NOTIFICATIONS}|" \
     -e "s|DJANGO_SETTINGS_MODULE=config.settings.production|DJANGO_SETTINGS_MODULE=config.settings.development|" \
+    -e "s|DEBUG=False|DEBUG=True|" \
     -e "s|APP_NAME=MyApp|APP_NAME=${PROJECT_DISPLAY_NAME}|" \
     -e "s|ADMIN_URL=tacomate|ADMIN_URL=${ADMIN_URL}|" \
     "${OUTPUT_DIR}/backend/.env" && rm -f "${OUTPUT_DIR}/backend/.env.bak"
@@ -287,9 +305,10 @@ echo -e "  ${YELLOW}□${NC} Sentry:       SENTRY_DSN (optional)"
 echo ""
 echo -e "${BOLD}━━━ Documentation ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo -e "  Backend:  ${OUTPUT_DIR}/backend/START.md"
-echo -e "  Frontend: ${OUTPUT_DIR}/frontend/START.md"
-echo -e "  Testing:  ${OUTPUT_DIR}/testing/START.md"
+echo -e "  Deployment:   ${OUTPUT_DIR}/ops/COOLIFY_SETUP.md"
+echo -e "  Architecture: ${OUTPUT_DIR}/docs/ARCHITECTURE.md"
+echo -e "  Decisions:    ${OUTPUT_DIR}/docs/DECISIONS.md"
+echo -e "  Launch:       ${OUTPUT_DIR}/ops/LAUNCH_CHECKLIST.md"
 echo ""
 echo -e "${BOLD}━━━ Multi-tenancy (local dev) ━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""

@@ -6,6 +6,7 @@ from datetime import timedelta
 
 from celery import shared_task
 from django.conf import settings
+from django.template.loader import render_to_string
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -37,28 +38,20 @@ def send_trial_ending_email(self, subscription_id: int) -> None:
     plan_name = subscription.plan.name if subscription.plan else "your plan"
     billing_url = f"https://{settings.BASE_DOMAIN}/billing/"
 
+    context = {
+        "user": owner,
+        "app_name": app_name,
+        "plan_name": plan_name,
+        "days_left": days_left,
+        "billing_url": billing_url,
+    }
+
     subject = f"Your {app_name} trial ends in {days_left} day(s)"
-    html_body = f"""
-    <h2>Your trial is ending soon</h2>
-    <p>Hi {owner.first_name or owner.email},</p>
-    <p>Your free trial of <strong>{plan_name}</strong> on {app_name} ends in
-    <strong>{days_left} day(s)</strong>.</p>
-    <p>To keep access, please add a payment method:</p>
-    <p>
-        <a href="{billing_url}" style="
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #4F46E5;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-        ">Manage Billing</a>
-    </p>
-    <p>Questions? Reply to this email — we're happy to help.</p>
-    """
+    html_body = render_to_string("subscriptions/email/trial_ending.html", context)
+    text_body = render_to_string("subscriptions/email/trial_ending.txt", context)
 
     try:
-        send_email(to=owner.email, subject=subject, html_body=html_body)
+        send_email(to=owner.email, subject=subject, html_body=html_body, text_body=text_body)
         logger.info(
             "Trial ending email sent to %s for subscription %s",
             owner.email,
@@ -67,6 +60,70 @@ def send_trial_ending_email(self, subscription_id: int) -> None:
     except Exception as exc:
         logger.warning("Failed to send trial ending email: %s", exc)
         raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=300)
+def send_payment_failed_email(self, subscription_id: int, amount: str = "") -> None:
+    """Notify the tenant owner that a payment failed (dunning)."""
+    from apps.subscriptions.models import Subscription
+    from utils.email import send_email
+
+    try:
+        subscription = Subscription.objects.select_related(
+            "tenant__owner", "plan"
+        ).get(pk=subscription_id)
+    except Subscription.DoesNotExist:
+        logger.error("Subscription %s not found", subscription_id)
+        return
+
+    owner = subscription.tenant.owner
+    app_name = settings.APP_NAME
+    billing_url = f"https://{settings.BASE_DOMAIN}/billing/"
+
+    context = {
+        "user": owner,
+        "app_name": app_name,
+        "amount": amount,
+        "billing_url": billing_url,
+    }
+
+    subject = f"Payment failed for your {app_name} subscription"
+    html_body = render_to_string("subscriptions/email/payment_failed.html", context)
+    text_body = render_to_string("subscriptions/email/payment_failed.txt", context)
+
+    try:
+        send_email(to=owner.email, subject=subject, html_body=html_body, text_body=text_body)
+        logger.info(
+            "Payment failed email sent to %s for subscription %s",
+            owner.email,
+            subscription_id,
+        )
+    except Exception as exc:
+        logger.warning("Failed to send payment failed email: %s", exc)
+        raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def sync_stripe_customer_email(self, user_id: int, new_email: str) -> None:
+    """Update Stripe customer email for all tenants owned by this user."""
+    import stripe
+    from apps.subscriptions.models import Subscription
+
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+    customer_ids = list(
+        Subscription.objects.filter(
+            tenant__owner_id=user_id,
+        ).exclude(stripe_customer_id="").values_list("stripe_customer_id", flat=True)
+    )
+
+    for customer_id in customer_ids:
+        try:
+            stripe.Customer.modify(customer_id, email=new_email)
+            logger.info("Updated Stripe customer %s email to %s", customer_id, new_email)
+        except stripe.StripeError as exc:
+            logger.warning("Failed to update Stripe customer %s email: %s", customer_id, exc)
+            raise self.retry(exc=exc)
 
 
 @shared_task

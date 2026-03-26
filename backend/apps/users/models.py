@@ -14,6 +14,17 @@ class CustomUser(AbstractUser):
     username = models.CharField(max_length=150, blank=True, default="")
     email = models.EmailField(unique=True)
 
+    # Pending email change — set when a change is requested, cleared on confirm/cancel
+    pending_email = models.EmailField(blank=True, default="")
+
+    # User's preferred UI theme (applied in protected views only)
+    THEME_CHOICES = [("system", "System"), ("light", "Light"), ("dark", "Dark")]
+    theme = models.CharField(
+        max_length=10,
+        choices=THEME_CHOICES,
+        default="light",
+    )
+
     # Track first-time logins for welcome notification
     is_first_login = models.BooleanField(
         default=True,

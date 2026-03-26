@@ -53,8 +53,8 @@ If there are uncommitted changes → stop and tell the user.
 ### Step 2 — Run all tests
 ```bash
 cd backend && make test       # pytest must pass
-cd ../frontend && npm run type-check  # tsc must pass
-cd ../frontend && npm run lint        # eslint must pass
+cd ../frontend && pnpm type-check     # tsc must pass
+cd ../frontend && pnpm lint           # eslint must pass
 ```
 If any test fails → stop. Do not release broken code.
 

@@ -69,6 +69,14 @@ export function Footer() {
                   Privacy Policy
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/legal/cookies"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Cookie Policy
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -104,6 +112,12 @@ export function Footer() {
               className="text-xs text-muted-foreground hover:text-foreground"
             >
               Privacy
+            </Link>
+            <Link
+              href="/legal/cookies"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Cookies
             </Link>
           </div>
         </div>

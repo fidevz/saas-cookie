@@ -22,6 +22,10 @@ app.conf.beat_schedule = {
         "task": "apps.subscriptions.tasks.check_trial_endings",
         "schedule": crontab(hour=9, minute=0),  # Every day at 09:00 UTC
     },
+    "cleanup-unverified-tenants": {
+        "task": "apps.tenants.tasks.cleanup_unverified_tenants",
+        "schedule": crontab(hour="*/6"),  # Every 6 hours
+    },
 }
 
 

@@ -9,14 +9,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFeatureStore } from "@/stores/feature-store";
 import { useTenantStore } from "@/stores/tenant-store";
 import { useAuthStore } from "@/stores/auth-store";
+import { FeatureGate } from "@/components/billing/feature-gate";
 import { api } from "@/lib/api";
-import { TenantMembership } from "@/types";
+import { Invitation, TenantMembership } from "@/types";
 
 export default function TeamPage() {
   const t = useTranslations("team");
   const router = useRouter();
   const { flags, isLoaded } = useFeatureStore();
-  const { members, setMembers } = useTenantStore();
+  const { members, setMembers, invitations, setInvitations, addInvitation } = useTenantStore();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
 
@@ -40,12 +41,25 @@ export default function TeamPage() {
   const currentUserRole = currentUserMembership?.role ?? "member";
   const isAdmin = currentUserRole === "admin";
 
+  useEffect(() => {
+    if (!flags.TEAMS || !isAdmin) return;
+    api
+      .get<{ results: Invitation[] } | Invitation[]>("/teams/invitations/pending/")
+      .then((data) => setInvitations(Array.isArray(data) ? data : data.results))
+      .catch(() => {});
+  }, [flags.TEAMS, isAdmin, setInvitations]);
+
   if (!isLoaded || !flags.TEAMS) return null;
 
   return (
+    <FeatureGate
+      capability="teams"
+      title="Team Management"
+      description="Invite members, manage roles, and collaborate with your team."
+    >
     <div className="mx-auto max-w-3xl space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage your team members and their permissions.
         </p>
@@ -54,15 +68,15 @@ export default function TeamPage() {
       {/* Invite form — admins only */}
       {isAdmin && (
         <div className="rounded-xl border border-border bg-background p-6">
-          <h2 className="mb-4 text-sm font-semibold">{t("invite")}</h2>
-          <InviteForm />
+          <h2 className="mb-4 text-sm font-semibold text-foreground">{t("invite")}</h2>
+          <InviteForm onInviteSent={addInvitation} />
         </div>
       )}
 
       {/* Member list */}
       <div>
         <h2 className="mb-4 text-sm font-semibold">
-          Members ({members.length})
+          Members ({members.length}){invitations.length > 0 && ` · ${invitations.length} pending`}
         </h2>
         {loading ? (
           <div className="space-y-3">
@@ -78,9 +92,10 @@ export default function TeamPage() {
             ))}
           </div>
         ) : (
-          <MemberList members={members} currentUserRole={currentUserRole} />
+          <MemberList members={members} invitations={invitations} currentUserRole={currentUserRole} />
         )}
       </div>
     </div>
+    </FeatureGate>
   );
 }

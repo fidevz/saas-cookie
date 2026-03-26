@@ -1,0 +1,15 @@
+Welcome to {{ plan_name }} — {{ app_name }}
+
+Hi {{ user.first_name|default:user.email }},
+
+Your subscription to {{ plan_name }} is now active. You have full access to
+everything included in your plan.
+
+Go to your dashboard:
+{{ dashboard_url }}
+
+If you have any questions, just reply to this email — we're happy to help.
+
+---
+{{ app_name }}
+This is a transactional email. Please do not reply to this message.

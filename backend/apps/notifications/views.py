@@ -59,3 +59,29 @@ class MarkAllReadView(APIView):
         _require_feature()
         updated = Notification.objects.filter(user=request.user, read=False).update(read=True)
         return Response({"detail": f"{updated} notifications marked as read."})
+
+
+class DeleteNotificationView(APIView):
+    """DELETE /api/v1/notifications/{id}/ — delete a single notification."""
+
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request: Request, pk: int) -> Response:
+        _require_feature()
+        try:
+            notification = Notification.objects.get(pk=pk, user=request.user)
+        except Notification.DoesNotExist:
+            raise NotFound("Notification not found.")
+        notification.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ClearReadNotificationsView(APIView):
+    """POST /api/v1/notifications/clear-read/ — delete all read notifications."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        _require_feature()
+        deleted_count, _ = Notification.objects.filter(user=request.user, read=True).delete()
+        return Response({"detail": f"{deleted_count} read notifications cleared."})

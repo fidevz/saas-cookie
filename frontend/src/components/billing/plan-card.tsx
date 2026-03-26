@@ -6,7 +6,7 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
-import { createCheckoutSession } from "@/lib/stripe";
+import { createCheckoutSession, selectFreePlan } from "@/lib/stripe";
 import { Plan } from "@/types";
 import { toast } from "sonner";
 
@@ -14,15 +14,21 @@ interface PlanCardProps {
   plan: Plan;
   isCurrentPlan?: boolean;
   isPopular?: boolean;
+  onUpgrade?: () => void;
 }
 
-export function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
+export function PlanCard({ plan, isCurrentPlan, isPopular, onUpgrade }: PlanCardProps) {
   const [loading, setLoading] = useState(false);
 
   const handleSelect = async () => {
     setLoading(true);
     try {
-      await createCheckoutSession(plan.id);
+      if (Number(plan.amount) === 0) {
+        await selectFreePlan();
+        window.location.reload();
+      } else {
+        await createCheckoutSession(plan.id);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to start checkout");
       setLoading(false);
@@ -55,7 +61,10 @@ export function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
 
       <CardContent>
         <ul className="space-y-2.5">
-          {Object.entries(plan.features).map(([feature, enabled]) => (
+          {(Array.isArray(plan.features)
+            ? plan.features.map((f) => [f, true] as [string, boolean])
+            : Object.entries(plan.features)
+          ).map(([feature, enabled]) => (
             <li
               key={feature}
               className={`flex items-center gap-2 text-sm ${
@@ -77,6 +86,15 @@ export function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
         {isCurrentPlan ? (
           <Button variant="outline" className="w-full" disabled>
             Current plan
+          </Button>
+        ) : onUpgrade ? (
+          <Button
+            className="w-full"
+            variant={isPopular ? "default" : "outline"}
+            onClick={onUpgrade}
+            disabled={loading}
+          >
+            Upgrade
           </Button>
         ) : (
           <Button

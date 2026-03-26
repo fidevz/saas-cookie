@@ -20,7 +20,9 @@ from apps.teams.serializers import (
     UpdateMemberRoleSerializer,
 )
 from apps.tenants.models import TenantMembership
-from utils.permissions import IsTenantAdmin, IsTenantMember
+from utils.permissions import HasPlanCapability, IsTenantAdmin, IsTenantMember, WithinPlanLimit
+
+_count_members = lambda tenant: TenantMembership.objects.filter(tenant=tenant).count()  # noqa: E731
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +42,11 @@ def _require_feature(name: str) -> None:
 class InviteMemberView(APIView):
     """POST /api/v1/teams/invitations/ — invite a new member."""
 
-    permission_classes = [IsTenantAdmin]
+    permission_classes = [
+        IsTenantAdmin,
+        HasPlanCapability("teams"),
+        WithinPlanLimit("team_members", _count_members),
+    ]
 
     def post(self, request: Request) -> Response:
         _require_feature("TEAMS")
@@ -134,6 +140,38 @@ class AcceptInviteView(APIView):
                 "role": membership.role,
             }
         )
+
+
+class ListInvitationsView(ListAPIView):
+    """GET /api/v1/teams/invitations/pending/ — list pending invitations for the current tenant."""
+
+    serializer_class = InvitationSerializer
+    permission_classes = [IsTenantAdmin]
+
+    def get_queryset(self):
+        _require_feature("TEAMS")
+        tenant = _require_tenant(self.request)
+        return (
+            Invitation.objects.filter(tenant=tenant, accepted=False, expires_at__gt=timezone.now())
+            .select_related("tenant", "invited_by")
+            .order_by("-created_at")
+        )
+
+
+class CancelInvitationView(APIView):
+    """DELETE /api/v1/teams/invitations/{pk}/cancel/ — cancel a pending invitation."""
+
+    permission_classes = [IsTenantAdmin]
+
+    def delete(self, request: Request, pk: int) -> Response:
+        _require_feature("TEAMS")
+        tenant = _require_tenant(request)
+        try:
+            invitation = Invitation.objects.get(pk=pk, tenant=tenant, accepted=False)
+        except Invitation.DoesNotExist:
+            raise NotFound("Invitation not found.")
+        invitation.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ListMembersView(ListAPIView):

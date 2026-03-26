@@ -1,0 +1,13 @@
+Hi {{ user.first_name|default:user.email }},
+
+A request was made to change your account email address to {{ new_email }}.
+
+If this was you, no action is needed here. The change will take effect once confirmed from the new address.
+
+If you did NOT make this request, cancel it immediately by clicking the link below:
+
+{{ cancel_url }}
+
+This cancel link expires in 24 hours. If you believe your account has been compromised, please reset your password immediately.
+
+— {{ current_site.name }}

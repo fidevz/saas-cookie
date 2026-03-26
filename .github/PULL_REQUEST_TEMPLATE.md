@@ -27,7 +27,7 @@ Closes #
 - [ ] Code follows existing conventions (see `CLAUDE.md`)
 - [ ] `make lint` passes
 - [ ] `make test` passes
-- [ ] `npm run type-check` passes
+- [ ] `pnpm type-check` passes
 - [ ] No secrets or sensitive data in the diff
 - [ ] `CHANGELOG.md` updated if this is a notable change
 - [ ] Documentation updated if behavior changed

@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { verifyEmail } from "@/lib/auth";
+import { getTenantUrl } from "@/lib/tenant";
 
 type State = "loading" | "success" | "error";
 
@@ -14,9 +15,12 @@ export default function VerifyEmailPage() {
   const router = useRouter();
   const [state, setState] = useState<State>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loginCode, setLoginCode] = useState<string | null>(null);
+  const [verifyTenantSlug, setVerifyTenantSlug] = useState<string | null>(null);
 
+  // Effect 1 — verify the key and capture the one-time login code.
   useEffect(() => {
-    const key = params.key;
+    const key = decodeURIComponent(params.key);
     if (!key) {
       setState("error");
       setErrorMessage("Invalid verification link.");
@@ -24,9 +28,10 @@ export default function VerifyEmailPage() {
     }
 
     verifyEmail(key)
-      .then(() => {
+      .then((res) => {
         setState("success");
-        setTimeout(() => router.push("/auth/login"), 3000);
+        setLoginCode(res.code);
+        setVerifyTenantSlug(res.tenant_slug);
       })
       .catch((err) => {
         setState("error");
@@ -34,7 +39,22 @@ export default function VerifyEmailPage() {
           err instanceof Error ? err.message : "Invalid or expired verification link."
         );
       });
-  }, [params.key, router]);
+  }, [params.key]);
+
+  // Effect 2 — once the code is ready, redirect to the callback page which
+  // exchanges it for real tokens. The code travels in the URL but is opaque,
+  // single-use, and expires in 60 seconds — no bearer token is ever in the URL.
+  useEffect(() => {
+    if (!loginCode) return;
+
+    const callbackPath = `/auth/callback?code=${loginCode}`;
+
+    if (verifyTenantSlug) {
+      window.location.href = getTenantUrl(verifyTenantSlug, callbackPath);
+    } else {
+      router.push(callbackPath);
+    }
+  }, [loginCode, verifyTenantSlug, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12">
@@ -66,12 +86,10 @@ export default function VerifyEmailPage() {
               <div>
                 <p className="font-semibold">Email verified!</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Your account is now active. Redirecting to sign in…
+                  Your account is active. Signing you in…
                 </p>
               </div>
-              <Button asChild className="w-full" variant="outline">
-                <Link href="/auth/login">Sign in now</Link>
-              </Button>
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </>
           )}
 

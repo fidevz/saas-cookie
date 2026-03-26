@@ -18,7 +18,7 @@ shell:
 	uv run python manage.py shell_plus
 
 test:
-	uv run pytest
+	uv run pytest --cov=apps --cov-report=term-missing --cov-fail-under=70 $(ARGS)
 
 lint:
 	uv run ruff check . && uv run ruff format --check .

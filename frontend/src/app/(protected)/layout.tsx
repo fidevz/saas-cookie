@@ -9,9 +9,13 @@ import { useFeatureStore } from "@/stores/feature-store";
 import { useNotificationStore } from "@/stores/notification-store";
 import { useTenantStore } from "@/stores/tenant-store";
 import { fetchFeatureFlags } from "@/lib/features";
+import { useSubscription } from "@/hooks/use-subscription";
 import { api } from "@/lib/api";
-import { TenantMembership } from "@/types";
+import { TenantMembership, PaginatedResponse, Notification } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Paywall } from "@/components/billing/paywall";
+import { useThemeStore } from "@/stores/theme-store";
+import { cn } from "@/lib/utils";
 
 export default function ProtectedLayout({
   children,
@@ -20,9 +24,11 @@ export default function ProtectedLayout({
 }) {
   const router = useRouter();
   const { isAuthenticated, isLoading, accessToken, user } = useAuthStore();
-  const { setFlags, isLoaded } = useFeatureStore();
+  const { flags, setFlags, isLoaded } = useFeatureStore();
   const { connectWebSocket, setNotifications } = useNotificationStore();
   const { setCurrentUserRole } = useTenantStore();
+  const { isActive: hasActiveSub, isLoading: subLoading } = useSubscription();
+  const { resolvedTheme, resolveTheme } = useThemeStore();
 
   // Auth guard
   useEffect(() => {
@@ -51,14 +57,23 @@ export default function ProtectedLayout({
       .catch(() => setCurrentUserRole("member"));
   }, [isAuthenticated, user, setCurrentUserRole]);
 
+  // Listen for OS-level theme changes when user preference is "system"
+  useEffect(() => {
+    resolveTheme();
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => resolveTheme();
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [resolveTheme]);
+
   // Initialize WebSocket for notifications
   useEffect(() => {
     if (isAuthenticated && accessToken) {
       // Fetch initial notifications
       import("@/lib/api").then(({ api }) => {
         api
-          .get<Array<{ id: number; type: "welcome" | "info" | "warning" | "error"; title: string; body: string; read: boolean; created_at: string }>>("/notifications/")
-          .then(setNotifications)
+          .get<PaginatedResponse<Notification>>("/notifications/")
+          .then((data) => setNotifications(data.results, data.next !== null))
           .catch(() => {});
       });
 
@@ -74,7 +89,7 @@ export default function ProtectedLayout({
     }
   }, [isAuthenticated, accessToken, connectWebSocket, setNotifications]);
 
-  if (isLoading) {
+  if (isLoading || (isAuthenticated && isLoaded && flags.REQUIRE_SUBSCRIPTION && subLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -89,12 +104,17 @@ export default function ProtectedLayout({
     return null;
   }
 
+  // Paywall: show full-page plan selection instead of app shell
+  if (isLoaded && flags.REQUIRE_SUBSCRIPTION && !subLoading && !hasActiveSub) {
+    return <Paywall />;
+  }
+
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className={cn("flex h-screen overflow-hidden bg-background text-foreground", resolvedTheme === "dark" && "dark")} suppressHydrationWarning>
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar />
-        <main className="flex-1 overflow-y-auto bg-slate-50/30 p-6">
+        <main className="flex-1 overflow-y-auto bg-slate-50/30 dark:bg-background p-6">
           {children}
         </main>
       </div>

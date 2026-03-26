@@ -84,7 +84,7 @@ In the application settings → Environment Variables, add:
 
 ### Compose-level (top-level `.env`)
 ```env
-POSTGRES_DB=saas_boilerplate
+POSTGRES_DB=your_project_name   # must match DATABASE_URL below
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=<strong-random-password>
 
@@ -97,8 +97,8 @@ MINIO_ROOT_PASSWORD=<strong-password>
 MINIO_BUCKET=media
 ```
 
-### Backend `.env` (referenced by `env_file: ./backend/.env`)
-Create `backend/.env` in the repo (gitignored) OR set these via Coolify's file mount feature:
+### Backend `.env`
+**Use Coolify's "Env File" feature** to paste the content below directly into the Coolify UI — it mounts it as a file inside the container without ever touching the git repo. Do not commit `.env` files to git, even gitignored ones.
 
 ```env
 SECRET_KEY=<50-char-random-string>
@@ -108,7 +108,7 @@ ALLOWED_HOSTS=api.yourdomain.com
 CORS_ALLOWED_ORIGINS=https://yourdomain.com
 AUTH_COOKIE_SECURE=True
 
-DATABASE_URL=postgres://postgres:<POSTGRES_PASSWORD>@db:5432/saas_boilerplate
+DATABASE_URL=postgres://postgres:<POSTGRES_PASSWORD>@db:5432/your_project_name   # must match POSTGRES_DB above
 REDIS_URL=redis://redis:6379/0
 
 BASE_DOMAIN=yourdomain.com
@@ -135,7 +135,7 @@ MINIO_ENDPOINT=http://minio:9000
 MINIO_PUBLIC_URL=https://storage.yourdomain.com/media
 ```
 
-> **Tip:** Use Coolify's "Env File" feature to paste the backend `.env` content directly — it mounts it as a file inside the container without committing secrets to git.
+> **Note:** `FRONTEND_URL` should be set to your root domain (e.g. `https://yourdomain.com`) — this is used to build email confirmation links.
 
 ---
 

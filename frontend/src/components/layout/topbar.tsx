@@ -55,7 +55,7 @@ export function Topbar({ title }: TopbarProps) {
           <DropdownMenuTrigger asChild>
             <button aria-label="User menu" className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-slate-200 text-slate-700 text-xs">
+                <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                   {user
                     ? getInitials(user.first_name, user.last_name)
                     : "?"}

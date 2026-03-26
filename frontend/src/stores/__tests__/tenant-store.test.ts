@@ -9,7 +9,7 @@ const mockUser: User = {
   email: "alice@acme.com",
   first_name: "Alice",
   last_name: "Smith",
-  is_first_login: false, tenant_slug: null,
+  is_first_login: false, tenant_slug: null, theme: "system",
 };
 
 const mockUser2: User = {
@@ -17,7 +17,7 @@ const mockUser2: User = {
   email: "bob@acme.com",
   first_name: "Bob",
   last_name: "Jones",
-  is_first_login: false, tenant_slug: null,
+  is_first_login: false, tenant_slug: null, theme: "system",
 };
 
 const mockMember: TenantMembership = {

@@ -65,7 +65,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run pnpm audit
-        run: pnpm audit --audit-level moderate
+        run: pnpm audit --audit-level high
 
   build:
     name: Build
@@ -99,13 +99,12 @@ jobs:
       - name: Build Next.js app
         run: pnpm build
 
-  deploy:
-    name: Deploy to Cloudflare Pages
-    runs-on: ubuntu-latest
-    needs: [build, security-audit]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Trigger Cloudflare Pages deployment
-        run: |
-          curl -X POST "${{ secrets.CLOUDFLARE_PAGES_DEPLOY_HOOK }}"
+  # ---------------------------------------------------------------------------
+  # Deploy step — configure for your hosting provider.
+  #
+  # Recommended: use the top-level deploy.yml workflow (triggered on GitHub
+  # Release) which fires a Coolify webhook. See ops/COOLIFY_SETUP.md.
+  #
+  # If you need a push-based deploy from this workflow, add your provider's
+  # deploy step here (e.g. Vercel deploy hook, Netlify CLI, Coolify webhook).
+  # ---------------------------------------------------------------------------

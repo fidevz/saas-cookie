@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "MyApp";
 
@@ -115,7 +116,13 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto p-3">
         <ul className="space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const exactMatch = pathname === item.href;
+            const prefixMatch = pathname.startsWith(item.href + "/");
+            // Only use prefix match if no other nav item is a more specific match
+            const hasMoreSpecificMatch = prefixMatch && navItems.some(
+              (other) => other.href !== item.href && (pathname === other.href || pathname.startsWith(other.href + "/")) && other.href.startsWith(item.href)
+            );
+            const isActive = exactMatch || (prefixMatch && !hasMoreSpecificMatch);
             const Icon = item.icon;
             return (
               <li key={item.href}>
@@ -149,7 +156,7 @@ export function Sidebar() {
           )}
         >
           <Avatar className="h-8 w-8 shrink-0">
-            <AvatarFallback className="bg-slate-200 text-slate-700 text-xs">
+            <AvatarFallback className="bg-muted text-muted-foreground text-xs">
               {user
                 ? getInitials(user.first_name, user.last_name)
                 : "?"}
@@ -157,7 +164,7 @@ export function Sidebar() {
           </Avatar>
           {!collapsed && (
             <div className="flex flex-1 flex-col min-w-0">
-              <p className="truncate text-sm font-medium">
+              <p className="truncate text-sm font-medium text-foreground">
                 {user ? `${user.first_name} ${user.last_name}` : ""}
               </p>
               <p className="truncate text-xs text-muted-foreground">
@@ -175,14 +182,22 @@ export function Sidebar() {
             </button>
           )}
         </div>
+        {!collapsed && (
+          <div className="px-1">
+            <ThemeToggle collapsed={false} />
+          </div>
+        )}
         {collapsed && (
-          <button
-            onClick={handleSignOut}
-            className="mt-1 flex w-full items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-            aria-label={t("signOut")}
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <div className="mt-1 flex flex-col items-center gap-1">
+            <ThemeToggle collapsed={true} />
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              aria-label={t("signOut")}
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         )}
       </div>
     </div>

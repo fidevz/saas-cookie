@@ -13,8 +13,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ["id", "email", "first_name", "last_name", "is_first_login", "date_joined", "tenant_slug"]
-        read_only_fields = ["id", "email", "is_first_login", "date_joined", "tenant_slug"]
+        fields = ["id", "email", "pending_email", "first_name", "last_name", "is_first_login", "date_joined", "tenant_slug", "theme"]
+        read_only_fields = ["id", "email", "pending_email", "is_first_login", "date_joined", "tenant_slug"]
 
     def get_tenant_slug(self, obj: CustomUser) -> str | None:
         membership = (
@@ -32,8 +32,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ["id", "email", "first_name", "last_name", "is_first_login", "tenant_slug"]
-        read_only_fields = ["id", "email", "is_first_login", "tenant_slug"]
+        fields = ["id", "email", "pending_email", "first_name", "last_name", "is_first_login", "tenant_slug", "theme"]
+        read_only_fields = ["id", "email", "pending_email", "is_first_login", "tenant_slug"]
 
     def get_tenant_slug(self, obj: CustomUser) -> str | None:
         membership = (

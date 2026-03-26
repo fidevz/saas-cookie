@@ -173,7 +173,10 @@ export function PricingSection({ plans: initialPlans }: PricingSectionProps) {
                 </div>
 
                 <ul className="mb-8 flex-1 space-y-3">
-                  {Object.entries(plan.features).map(([feature, enabled]) => (
+                  {(Array.isArray(plan.features)
+                    ? plan.features.map((f) => [f, true] as [string, boolean])
+                    : Object.entries(plan.features)
+                  ).map(([feature, enabled]) => (
                     <li
                       key={feature}
                       className={cn(

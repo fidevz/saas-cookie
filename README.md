@@ -58,18 +58,14 @@ make db-reset          # create db + migrate + seed
 make run               # http://localhost:8000
 ```
 
-See [`backend/START.md`](./backend/START.md) for the full setup guide.
-
 ### 3. Frontend
 
 ```bash
 cd frontend
-cp .env.example .env   # fill in your values
-npm install
-npm run dev            # http://localhost:3000
+cp .env.example .env.local   # fill in your values
+pnpm install
+pnpm dev                     # http://localhost:3000
 ```
-
-See [`frontend/START.md`](./frontend/START.md) for the full setup guide.
 
 ### 4. E2E Tests
 
@@ -79,8 +75,6 @@ cp .env.example .env
 pnpm install
 pnpm exec playwright test
 ```
-
-See [`testing/START.md`](./testing/START.md) for the full setup guide.
 
 ---
 
@@ -145,7 +139,8 @@ The `marketing/` folder contains a complete AI-operated marketing system. Fill i
 4. Set real numbers in `marketing/strategy/BUDGET.md` and `marketing/decisions/THRESHOLDS.md`
 5. Replace placeholder content in `legal/` documents and publish them
 6. Complete `ops/LAUNCH_CHECKLIST.md` before going live
-7. Read `CLAUDE.md` for full developer context
+7. Work through `docs/TODO.md` — known production readiness gaps to address
+8. Read `CLAUDE.md` for full developer context
 
 ---
 
@@ -154,12 +149,11 @@ The `marketing/` folder contains a complete AI-operated marketing system. Fill i
 | Document | Description |
 |----------|-------------|
 | [`CLAUDE.md`](./CLAUDE.md) | Full stack, conventions, and commands for AI assistance |
-| [`backend/START.md`](./backend/START.md) | Backend setup, Stripe, OAuth, WebSockets |
-| [`frontend/START.md`](./frontend/START.md) | Frontend setup and conventions |
-| [`testing/START.md`](./testing/START.md) | E2E test setup and usage |
 | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | System design and request flows |
 | [`docs/DECISIONS.md`](./docs/DECISIONS.md) | Why key technical choices were made |
-| [`ops/DEPLOYMENT.md`](./ops/DEPLOYMENT.md) | Production deployment guide |
+| [`docs/TODO.md`](./docs/TODO.md) | Known production gaps and backlog |
+| [`ops/COOLIFY_SETUP.md`](./ops/COOLIFY_SETUP.md) | Step-by-step production deployment (Coolify on Hetzner) |
+| [`ops/DEPLOYMENT.md`](./ops/DEPLOYMENT.md) | Deployment reference, env vars, rollback |
 | [`ops/LAUNCH_CHECKLIST.md`](./ops/LAUNCH_CHECKLIST.md) | Pre-launch checklist |
 | [`SECURITY.md`](./SECURITY.md) | Security policy and reporting |
 

@@ -36,8 +36,8 @@ sentry_sdk.init(
 
 Install and initialize in `src/app/layout.tsx`:
 ```bash
-npm install @sentry/nextjs
-npx @sentry/wizard@latest -i nextjs
+pnpm add @sentry/nextjs
+pnpm dlx @sentry/wizard@latest -i nextjs
 ```
 
 ### Sentry Alerts to configure

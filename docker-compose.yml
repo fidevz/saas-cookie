@@ -1,3 +1,10 @@
+# =============================================================================
+# PRODUCTION ONLY — This file is for Coolify deployment on a VPS.
+# Do NOT run `docker compose up` locally for development.
+# Local development uses native tools: uv, npm, PostgreSQL, Redis directly.
+# See README.md → Quick Start for local dev instructions.
+# =============================================================================
+
 services:
 
   # ─── Frontend ──────────────────────────────────────────────────────────────
@@ -15,6 +22,11 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
 
   # ─── Backend (API) ─────────────────────────────────────────────────────────
   backend:
@@ -38,6 +50,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
 
   # ─── Celery Worker ─────────────────────────────────────────────────────────
   worker:
@@ -53,6 +70,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
   # ─── Celery Beat (scheduled tasks) ─────────────────────────────────────────
   beat:
@@ -68,6 +90,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
 
   # ─── PostgreSQL ─────────────────────────────────────────────────────────────
   db:
@@ -86,6 +113,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
 
   # ─── Redis ─────────────────────────────────────────────────────────────────
   redis:
@@ -101,6 +133,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
 
   # ─── MinIO (S3-compatible file storage) ────────────────────────────────────
   minio:
@@ -120,6 +157,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
   # ─── MinIO bucket init (runs once, then exits) ─────────────────────────────
   minio-init:
@@ -131,8 +173,7 @@ services:
       /bin/sh -c "
       mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
       mc mb --ignore-existing local/${MINIO_BUCKET:-media};
-      mc anonymous set download local/${MINIO_BUCKET:-media};
-      echo 'MinIO bucket ready.';
+      echo 'MinIO bucket ready (private — access via pre-signed URLs).';
       "
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -146,6 +187,11 @@ services:
     ports:
       - "1025:1025"   # SMTP
       - "8025:8025"   # Web UI
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 64M
 
 volumes:
   postgres_data:

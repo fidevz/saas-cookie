@@ -1,10 +1,12 @@
 """
 Subscription and Plan models.
 """
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import BaseModel
+from apps.subscriptions.capabilities import default_capabilities, validate_capabilities
 
 
 class Plan(BaseModel):
@@ -15,7 +17,7 @@ class Plan(BaseModel):
         YEAR = "year", _("Yearly")
 
     name = models.CharField(max_length=100)
-    stripe_price_id = models.CharField(max_length=255, unique=True)
+    stripe_price_id = models.CharField(max_length=255, unique=True, blank=True, null=True, default=None)
     stripe_product_id = models.CharField(max_length=255, blank=True, default="")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=3, default="usd")
@@ -23,6 +25,11 @@ class Plan(BaseModel):
     trial_days = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     features = models.JSONField(default=list, blank=True)
+    capabilities = models.JSONField(
+        default=default_capabilities,
+        blank=True,
+        help_text="Machine-readable feature gates for this plan.",
+    )
 
     class Meta:
         ordering = ["amount"]
@@ -31,6 +38,15 @@ class Plan(BaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.interval}) — {self.currency.upper()} {self.amount}"
+
+    @property
+    def is_free(self) -> bool:
+        return self.amount == 0
+
+    def clean(self):
+        errors = validate_capabilities(self.capabilities or {})
+        if errors:
+            raise ValidationError({"capabilities": errors})
 
 
 class Subscription(BaseModel):
@@ -67,6 +83,12 @@ class Subscription(BaseModel):
     current_period_end = models.DateTimeField(null=True, blank=True)
     trial_end = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+    capabilities = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Snapshot of the plan's capabilities at subscription time. "
+                  "Isolates existing subscribers from future plan changes.",
+    )
 
     class Meta:
         verbose_name = "Subscription"

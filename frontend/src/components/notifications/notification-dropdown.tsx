@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { Bell } from "lucide-react";
+import Link from "next/link";
 import { NotificationItem } from "./notification-item";
 import { useNotificationStore } from "@/stores/notification-store";
 import { api } from "@/lib/api";
@@ -15,7 +16,7 @@ export function NotificationDropdown() {
   const handleMarkAllRead = async () => {
     markAllRead();
     try {
-      await api.post("/notifications/mark-all-read/", {});
+      await api.post("/notifications/read-all/", {});
     } catch {
       toast.error("Failed to mark notifications as read");
     }
@@ -50,6 +51,16 @@ export function NotificationDropdown() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-border px-4 py-2.5">
+        <Link
+          href="/notifications"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {t("viewAll")}
+        </Link>
       </div>
     </div>
   );

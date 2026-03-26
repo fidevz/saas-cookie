@@ -109,9 +109,13 @@ celery -A config beat -l info
 # NEXT_PUBLIC_WS_URL=wss://api.yourdomain.com
 # NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
 
-npm run build
-npm run start  # or deploy to Vercel
+pnpm build
+pnpm start     # serve with Node.js, or deploy to your preferred platform
 ```
+
+> **Coolify (recommended):** The frontend is deployed automatically as part of the Docker Compose stack — no separate step needed. The deploy workflow triggers a Coolify webhook which rebuilds all services.
+>
+> If using an alternative provider (Railway, Render, Vercel), configure your frontend deploy step in `.github/workflows/deploy.yml`.
 
 ---
 
@@ -124,6 +128,7 @@ DEBUG=False
 ALLOWED_HOSTS=api.yourdomain.com
 CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 AUTH_COOKIE_SECURE=True
+AUTH_COOKIE_DOMAIN=.yourdomain.com   # leading dot — required for cross-subdomain auth cookies
 DATABASE_URL=postgres://user:pass@host:5432/dbname
 REDIS_URL=redis://...
 BASE_DOMAIN=yourdomain.com

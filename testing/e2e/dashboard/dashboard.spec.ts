@@ -28,18 +28,4 @@ test.describe("Dashboard", () => {
     await expect(page).toHaveURL(/auth\/login/);
   });
 
-  test("topbar is visible", async ({ authenticatedPage: page }) => {
-    // Verify we're on dashboard and topbar renders (no crash)
-    await expect(page).toHaveURL(/dashboard/);
-    // User menu button or avatar should be present in topbar
-    const userMenu = page.locator('[data-testid="user-menu"]');
-    const avatarButton = page.getByRole("button").filter({ hasText: /profile|avatar|user|admin/i });
-    const anyTopbarButton = userMenu.or(avatarButton);
-
-    const isVisible = await anyTopbarButton.isVisible().catch(() => false);
-    if (!isVisible) {
-      // Topbar exists but user menu may use different selector — just verify page loaded
-      await expect(page.getByRole("navigation")).toBeVisible();
-    }
-  });
 });

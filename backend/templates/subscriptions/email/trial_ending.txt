@@ -1,0 +1,15 @@
+Your trial ends in {{ days_left }} day{{ days_left|pluralize }} — {{ app_name }}
+
+Hi {{ user.first_name|default:user.email }},
+
+Your free trial of {{ plan_name }} on {{ app_name }} ends in
+{{ days_left }} day{{ days_left|pluralize }}. Add a payment method now to keep
+uninterrupted access:
+
+{{ billing_url }}
+
+Questions? Reply to this email — we're happy to help.
+
+---
+{{ app_name }}
+This is a transactional email. Please do not reply to this message.

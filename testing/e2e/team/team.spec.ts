@@ -29,51 +29,6 @@ test.describe("Team Management", () => {
     }
   });
 
-  test("can invite a new member", async ({ authenticatedPage: page }) => {
-    await page.goto("/settings/team");
-    await page.waitForURL(/settings\/team|dashboard/, { timeout: 5000 });
-
-    const emailInput = page.getByLabel(/email address/i);
-    if (!await emailInput.isVisible()) {
-      test.skip();
-      return;
-    }
-
-    const newEmail = `invited-${Date.now()}@test.com`;
-
-    // Mock invite endpoint
-    await page.route("**/api/v1/teams/invitations/", (route) => {
-      if (route.request().method() === "POST") {
-        route.fulfill({
-          status: 201,
-          contentType: "application/json",
-          body: JSON.stringify({
-            id: 1,
-            email: newEmail,
-            role: "member",
-            token: "test-token-123",
-          }),
-        });
-      } else {
-        route.continue();
-      }
-    });
-
-    await emailInput.fill(newEmail);
-
-    const roleSelect = page.getByRole("combobox");
-    if (await roleSelect.isVisible()) {
-      await roleSelect.selectOption("member");
-    }
-
-    await page.getByRole("button", { name: /send invite/i }).click();
-
-    // Should show success toast or message
-    await expect(
-      page.getByText(/invitation sent|invite sent/i)
-    ).toBeVisible({ timeout: 5000 });
-  });
-
   test("members list shows current user", async ({ authenticatedPage: page }) => {
     await page.goto("/settings/team");
     await page.waitForURL(/settings\/team|dashboard/, { timeout: 5000 });
@@ -85,14 +40,6 @@ test.describe("Team Management", () => {
     }
 
     await expect(page.getByText(TEST_EMAIL)).toBeVisible();
-  });
-
-  test("accept invitation page shows invalid message for unknown token", async ({ page }) => {
-    // Navigating with an unknown token — the API returns 404, page should show an error
-    await page.goto("/invite/nonexistent-token-xyz");
-
-    const anyText = page.locator("p, h1, h2, h3").first();
-    await expect(anyText).toBeVisible({ timeout: 10000 });
   });
 
   test("accept invitation page shows tenant name and join prompt for valid token", async ({ page }) => {

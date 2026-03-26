@@ -1,7 +1,7 @@
 """
 Custom DRF throttle classes for auth endpoints.
 """
-from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 
 class LoginThrottle(AnonRateThrottle):
@@ -20,3 +20,9 @@ class ResendVerificationThrottle(AnonRateThrottle):
     """1 resend request per 5 minutes per IP."""
 
     scope = "resend_verification"
+
+
+class EmailChangeThrottle(UserRateThrottle):
+    """3 email change requests per hour per user."""
+
+    scope = "email_change"
