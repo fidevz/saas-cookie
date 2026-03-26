@@ -171,6 +171,10 @@ class SubscriptionAdmin(admin.ModelAdmin):
     ]
     raw_id_fields = ["tenant", "plan"]
     ordering = ["-created_at"]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("tenant", "plan")
+
     fieldsets = [
         (
             None,

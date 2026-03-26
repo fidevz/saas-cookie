@@ -28,14 +28,14 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-lg font-semibold mb-3">1. Acceptance of Terms</h2>
               <p className="text-muted-foreground">
-                By accessing and using {APP_NAME} ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by these terms, please do not use the Service.
+                By accessing and using {APP_NAME} (&quot;the Service&quot;), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by these terms, please do not use the Service.
               </p>
             </section>
 
             <section>
               <h2 className="text-lg font-semibold mb-3">2. Description of Service</h2>
               <p className="text-muted-foreground">
-                {APP_NAME} provides [describe your service here]. The Service is provided "as is" and we reserve the right to modify or discontinue it at any time with or without notice.
+                {APP_NAME} provides [describe your service here]. The Service is provided &quot;as is&quot; and we reserve the right to modify or discontinue it at any time with or without notice.
               </p>
             </section>
 

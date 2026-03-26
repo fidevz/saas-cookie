@@ -8,7 +8,7 @@ export interface LoginResponse {
 }
 
 export interface RegisterResponse {
-  access: string;
+  code: string;
   tenant_slug: string;
   user: User;
 }
@@ -48,7 +48,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
 }
 
 export async function confirmPasswordReset(token: string, password: string): Promise<void> {
-  await api.post<void>("/auth/password-reset/confirm/", { token, password }, { skipAuth: true });
+  await api.post<void>("/auth/password-reset/confirm/", { token, new_password: password }, { skipAuth: true });
 }
 
 export async function getProfile(): Promise<User> {
