@@ -128,7 +128,7 @@ Full-stack security audit findings. Work through these in priority order before 
 | H3 | `ops/COOLIFY_SETUP.md` | 28 | `curl \| bash` install pattern — arbitrary code execution if DNS or CDN is compromised | Open — verify script before piping |
 | H4 | `docker-compose.yml` | all | No Docker network isolation — compromised frontend container can reach PostgreSQL and Redis directly | **Fixed** |
 | H5 | `frontend/src/components/auth/login-form.tsx` | 67 | Open redirect — `callbackUrl` query param used in redirect without validation | **Fixed** |
-| H6 | `frontend/package.json` | — | CVE-2025-66478 — Next.js 15.0.4 has a known security vulnerability | Open — run `pnpm update next` |
+| H6 | `frontend/package.json` | — | CVE-2025-66478 — Next.js 15.0.4 has a known security vulnerability | **Fixed** — upgraded to 15.5.14 |
 | H7 | `apps/users/views.py` | 50 | Email change flow does not verify ownership of the new address before confirming the change | **Not a bug** — flow already sends confirmation to new address |
 | H8 | `apps/teams/views.py` | 207 | Race condition on last-admin check — non-atomic query allows concurrent removal of all admins | **Fixed** |
 | H9 | `apps/authentication/views.py` | 467 | Google OAuth callback does not validate the `state` parameter — CSRF on the OAuth flow | **Fixed** |
@@ -149,7 +149,7 @@ Full-stack security audit findings. Work through these in priority order before 
 | M7 | `frontend/src/app/error.tsx` | 18 | `console.error(error)` in production — stack traces leak in browser console | **Fixed** |
 | M8 | `apps/subscriptions/views.py` | 116 | Raw Stripe error messages returned to client — internal API structure disclosed | **Fixed** |
 | M9 | `apps/teams/views.py` | 77 | `GetInvitationView` is `AllowAny` and returns invited email + tenant name — enables email enumeration | **Fixed** |
-| M10 | `.github/workflows/*.yml` | — | GitHub Actions pinned to `@v4` tags, not commit SHAs — supply chain risk if tag is reassigned | Open — consider SHA pinning |
+| M10 | `.github/workflows/*.yml` | — | GitHub Actions pinned to `@v4` tags, not commit SHAs — supply chain risk if tag is reassigned | **Fixed** — pinned to latest release SHAs (checkout@v6.0.2, setup-node@v6.3.0, setup-uv@v7.6.0, pnpm/action-setup@v5.0.0) |
 | M11 | `frontend/next.config.ts` | 38 | Dev CSP uses `unsafe-eval` + `unsafe-inline` — risk if accidentally shipped to production | **Not a bug** — production CSP already strict; dev CSP is intentional |
 | M12 | `frontend/src/app/auth/check-email/page.tsx` | 15 | Email from query param rendered in translation string without format validation | **Fixed** |
 
@@ -162,5 +162,4 @@ Full-stack security audit findings. Work through these in priority order before 
 | L3 | Backend + Frontend | — | No Content-Security-Policy headers configured | **Not a bug** — CSP already in `next.config.ts` |
 | L4 | Various | — | Insufficient security event logging — no audit trail for role changes, email changes, auth failures | Open |
 | L5 | `ops/DEPLOYMENT.md` | — | No database backup strategy documented in pre-deploy checklist | Open |
-| L6 | `backend/config/settings/production.py` | — | No SIEM/IDS integration | Open |
-| L7 | `frontend/pnpm-lock.yaml` | — | Deprecated `glob` transitive dependency — run `pnpm audit fix` | Open — run `pnpm audit fix` |
+| L7 | `frontend/pnpm-lock.yaml` | — | Deprecated `glob` transitive dependency — run `pnpm audit fix` | **Fixed** — updated `eslint-config-next` to 15.5.14, added pnpm overrides for `esbuild >=0.25.0` and `picomatch ^2.3.2/^4.0.4` |
