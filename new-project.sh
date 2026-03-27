@@ -267,7 +267,7 @@ fi
 print_step "Initializing git repository..."
 cd "$OUTPUT_DIR"
 git init -q
-git add -A
+git add -A -- ':!backend/.env' ':!frontend/.env.local' ':!testing/.env'
 git commit -q -m "chore: initial commit from saas-boilerplate
 
 Project: ${PROJECT_NAME}
