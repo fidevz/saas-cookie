@@ -125,7 +125,7 @@ Full-stack security audit findings. Work through these in priority order before 
 |----|------|------|-------------|--------|
 | H1 | `docker-compose.yml` | 183 | Mailhog (dev email catcher) included in production compose — leaks password reset tokens and verification links | **Fixed** |
 | H2 | `.env.example` | 4, 13 | Default passwords set to `changeme` — may be deployed as-is | **Fixed** |
-| H3 | `ops/COOLIFY_SETUP.md` | 28 | `curl \| bash` install pattern — arbitrary code execution if DNS or CDN is compromised | Open — verify script before piping |
+| H3 | `ops/KAMAL_SETUP.md` | — | Kamal setup requires Docker install via `curl \| bash` on VPS — verify the script contents before piping to bash | Open — inspect `get.docker.com` script first |
 | H4 | `docker-compose.yml` | all | No Docker network isolation — compromised frontend container can reach PostgreSQL and Redis directly | **Fixed** |
 | H5 | `frontend/src/components/auth/login-form.tsx` | 67 | Open redirect — `callbackUrl` query param used in redirect without validation | **Fixed** |
 | H6 | `frontend/package.json` | — | CVE-2025-66478 — Next.js 15.0.4 has a known security vulnerability | **Fixed** — upgraded to 15.5.14 |

@@ -23,7 +23,7 @@ Labels: 🔴 blocking · 🟠 pre-launch · 🟡 improvement · 🟢 roadmap
 ### Testing & CI
 - [x] 🟠 **E2E tests not in CI** — intentionally excluded; Playwright suite is for local/manual use only
 ### Ops & Monitoring
-- [x] 🟠 **`curl | bash` in setup script** — review contents before piping to bash (`ops/COOLIFY_SETUP.md:28`)
+- [x] 🟠 `backup restore procedure` — document and test the pg_dump restore process before launch
 
 ---
 

@@ -52,6 +52,7 @@ THIRD_PARTY_APPS = [
     "channels",
     "django_extensions",
     "django_filters",
+    "django_celery_beat",
 ]
 
 LOCAL_APPS = [
@@ -72,6 +73,7 @@ SITE_ID = 1
 # Middleware
 # ---------------------------------------------------------------------------
 MIDDLEWARE = [
+    "apps.core.middleware.HealthCheckMiddleware",  # must be first — bypasses ALLOWED_HOSTS for proxy health checks
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -150,7 +152,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.StandardPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
@@ -172,6 +174,7 @@ REST_FRAMEWORK = {
         "email_change": "3/hour",
         "password_reset": "3/hour",
         "verify_email": "10/hour",
+        "support": "5/hour",
     },
 }
 
@@ -348,6 +351,11 @@ RESEND_API_KEY = config("RESEND_API_KEY", default="")
 STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY", default="")
 STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET", default="")
 STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY", default="")
+
+# ---------------------------------------------------------------------------
+# Cloudflare Turnstile
+# ---------------------------------------------------------------------------
+TURNSTILE_SECRET_KEY = config("TURNSTILE_SECRET_KEY", default="")
 
 # ---------------------------------------------------------------------------
 # Sentry

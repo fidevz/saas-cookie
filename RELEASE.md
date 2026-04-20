@@ -111,10 +111,13 @@ Report back: release URL, version, and that the deploy workflow was triggered.
 
 1. GitHub Release is published
 2. `.github/workflows/deploy.yml` triggers automatically
-3. Coolify pulls latest code and rebuilds all containers
-4. You receive a Telegram notification with the result
+3. CI runs (lint + tests) — deploy is blocked if any job fails
+4. GitHub Actions builds Docker images and pushes them to GHCR
+5. Kamal pulls the new images onto the VPS and does a zero-downtime swap
+6. Django migrations run automatically (via `before_switch` hook) before traffic switches
+7. You receive a Telegram notification with the result
 
-The whole process from "do a patch release" to "running in production" takes ~5 minutes.
+The whole process from "do a patch release" to "running in production" takes ~8–12 minutes.
 
 ---
 
@@ -123,8 +126,10 @@ The whole process from "do a patch release" to "running in production" takes ~5 
 If the deploy causes a problem after release:
 
 ```bash
-# Option 1: Rollback in Coolify UI (one click, fastest)
-# Coolify → Application → Deployments → previous deploy → Redeploy
+# Option 1: Rollback via Kamal (fastest — switches back to previous container)
+cd deploy
+kamal rollback                                 # backend
+kamal rollback -c config/deploy.frontend.yml  # frontend
 
 # Option 2: Create a fix and do a new patch release
 # Fix the issue → "do a patch release"

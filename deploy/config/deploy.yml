@@ -1,0 +1,187 @@
+# =============================================================================
+# Kamal 2 — Backend deploy config (web, worker, beat) + infrastructure accessories
+# Deploy: kamal deploy          (from the deploy/ directory)
+# First time: kamal setup
+# Rollback: kamal rollback
+#
+# Before running: replace all YOUR_* placeholders with your actual values.
+# new-project.sh handles this automatically.
+# =============================================================================
+
+service: YOUR_APP_NAME-backend
+image: ghcr.io/YOUR_GITHUB_ORG/YOUR_APP_NAME-backend
+
+env:
+  clear:
+    DJANGO_SETTINGS_MODULE: config.settings.production
+    DEBUG: "False"
+    BASE_DOMAIN: yourdomain.com
+    APP_NAME: YOUR_APP_NAME
+    AUTH_COOKIE_DOMAIN: ".yourdomain.com"
+    FEATURE_TEAMS: "true"
+    FEATURE_BILLING: "true"
+    FEATURE_NOTIFICATIONS: "true"
+    USE_S3: "True"
+    # MinIO is reachable inside Docker network via its Kamal service name
+    AWS_S3_ENDPOINT_URL: http://YOUR_APP_NAME-backend-minio:9000
+    PORT: 8000
+  secret:
+    - SECRET_KEY
+    - DATABASE_URL
+    - REDIS_URL
+    - POSTGRES_PASSWORD
+    - ALLOWED_HOSTS
+    - CORS_ALLOWED_ORIGINS
+    - STRIPE_SECRET_KEY
+    - STRIPE_WEBHOOK_SECRET
+    - STRIPE_PUBLISHABLE_KEY
+    - GOOGLE_CLIENT_ID
+    - GOOGLE_CLIENT_SECRET
+    - RESEND_API_KEY
+    - DEFAULT_FROM_EMAIL
+    - SENTRY_DSN
+    - ADMIN_URL
+    - FRONTEND_URL
+    - SUPPORT_EMAIL
+    - TURNSTILE_SECRET_KEY
+    - MINIO_ROOT_USER
+    - MINIO_ROOT_PASSWORD
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_STORAGE_BUCKET_NAME
+    - APP_VERSION
+
+# https://kamal-deploy.org/docs/configuration/servers#roles
+servers:
+  web:
+    hosts:
+      - YOUR_SERVER_IP
+    options:
+      expose: "8000"
+      memory: 512m
+  worker:
+    hosts:
+      - YOUR_SERVER_IP
+    cmd: uv run celery -A config worker -l info --concurrency 2
+    options:
+      memory: 512m
+  beat:
+    hosts:
+      - YOUR_SERVER_IP
+    cmd: uv run celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    options:
+      memory: 256m
+
+accessories:
+  # PostgreSQL — data at /var/lib/YOUR_APP_NAME/postgres on host
+  db:
+    image: postgres:16-alpine
+    host: YOUR_SERVER_IP
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_DB: YOUR_APP_NAME
+        POSTGRES_USER: postgres
+      secret:
+        - POSTGRES_PASSWORD
+    volumes:
+      - /var/lib/YOUR_APP_NAME/postgres:/var/lib/postgresql/data
+    options:
+      health-cmd: "pg_isready -U postgres -d YOUR_APP_NAME"
+      health-interval: 10s
+      health-timeout: 5s
+      health-retries: 5
+      memory: 512m
+
+  # Redis — password injected via env var in shell wrapper
+  redis:
+    image: redis:7-alpine
+    host: YOUR_SERVER_IP
+    port: "127.0.0.1:6379:6379"
+    cmd: "sh -c 'redis-server --appendonly yes --requirepass $REDIS_PASSWORD'"
+    env:
+      secret:
+        - REDIS_PASSWORD
+    volumes:
+      - /var/lib/YOUR_APP_NAME/redis:/data
+    options:
+      memory: 128m
+
+  # MinIO — S3-compatible file storage
+  minio:
+    image: minio/minio:latest
+    host: YOUR_SERVER_IP
+    port: "127.0.0.1:9000:9000"
+    cmd: "server /data --console-address :9001"
+    env:
+      secret:
+        - MINIO_ROOT_USER
+        - MINIO_ROOT_PASSWORD
+    volumes:
+      - /var/lib/YOUR_APP_NAME/minio:/data
+    options:
+      health-cmd: "curl -f http://localhost:9000/minio/health/live"
+      health-interval: 30s
+      health-timeout: 10s
+      health-retries: 3
+      memory: 256m
+
+  # Backup — pg_dump to Cloudflare R2 on cron schedule
+  backup:
+    image: ghcr.io/YOUR_GITHUB_ORG/YOUR_APP_NAME-backup
+    host: YOUR_SERVER_IP
+    env:
+      clear:
+        POSTGRES_DB: YOUR_APP_NAME
+        POSTGRES_USER: postgres
+        BACKUP_SCHEDULE: "0 2 * * *"
+        BACKUP_RETENTION_DAYS: "7"
+        RCLONE_CONFIG_R2_TYPE: s3
+        RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+      secret:
+        - POSTGRES_PASSWORD
+        - R2_BUCKET
+        - R2_ACCESS_KEY
+        - R2_SECRET_KEY
+        - R2_ENDPOINT
+    options:
+      memory: 128m
+
+registry:
+  server: ghcr.io
+  username: YOUR_GITHUB_ORG
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+ssh:
+  user: root
+
+builder:
+  arch:
+    - amd64
+  dockerfile: "../backend/Dockerfile"
+  context: "../backend"
+  cache:
+    type: registry
+    options: mode=max
+    image: ghcr.io/YOUR_GITHUB_ORG/YOUR_APP_NAME-backend-build-cache
+
+proxy:
+  ssl: false
+  app_port: 8000
+  host: api.yourdomain.com
+  forward_headers: true
+  response_timeout: 60
+  healthcheck:
+    interval: 3
+    path: /health/
+    timeout: 5
+  # Disable buffering for WebSocket (Django Channels) support
+  buffering:
+    requests: false
+    responses: false
+
+deploy_timeout: 60
+drain_timeout: 30
+readiness_delay: 10
+retain_containers: 3

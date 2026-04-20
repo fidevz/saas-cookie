@@ -18,7 +18,7 @@ Stripe retries webhook delivery on any non-2xx response, and network failures ca
 
 **Risk:** Access tokens appear in server access logs, proxy logs, and browser history.
 
-The WebSocket client in `frontend/src/lib/ws.ts` connects to `ws://host/ws/notifications/?token=<jwt>`. Any token that appears in a URL is likely to be logged by Nginx, Coolify, and any reverse proxy in the stack. JWT access tokens are short-lived (5 min) but this is still a security exposure.
+The WebSocket client in `frontend/src/lib/ws.ts` connects to `ws://host/ws/notifications/?token=<jwt>`. Any token that appears in a URL is likely to be logged by Nginx, kamal-proxy, and any reverse proxy in the stack. JWT access tokens are short-lived (5 min) but this is still a security exposure.
 
 **Fix:** Connect without the token in the URL, then send it as the first WebSocket message. Update `NotificationConsumer` in `backend/apps/notifications/consumers.py` to authenticate from the first received message and close the connection (code 4001) if no valid token arrives within a short timeout (e.g. 5 seconds).
 
@@ -50,8 +50,8 @@ Open findings from the internal audit that require action before production.
 
 ### High
 
-**H3 — Setup script uses `curl | bash`**
-`ops/COOLIFY_SETUP.md` line 28 documents a `curl | bash` install pattern. This executes arbitrary remote code without inspection — if the CDN or DNS is compromised, the setup script could be replaced. Verify the script contents locally before piping to bash, or switch to downloading and reviewing it first.
+**H3 — VPS Docker install uses `curl | bash`**
+`ops/KAMAL_SETUP.md` § 2 installs Docker via `curl -fsSL https://get.docker.com | sh`. This executes arbitrary remote code without inspection — if the CDN or DNS is compromised, the install script could be replaced. Verify the script contents locally before piping to bash on a new VPS.
 
 **~~H6 — Known CVE in Next.js (`CVE-2025-66478`)~~** ✓ Fixed — upgraded to 15.5.14
 
@@ -71,6 +71,6 @@ Role changes, email changes, and repeated auth failures leave no audit trail. Th
 
 **L5 — No documented database backup strategy**
 The deployment docs don't specify backup frequency, retention, or restore procedure. A database loss without a tested backup is unrecoverable.
-**Fix:** Configure automated daily Postgres backups (Coolify supports this, or use `pg_dump` via a cron task). Document the restore procedure and test it at least once before launch.
+**Fix:** The Kamal `backup` accessory runs nightly `pg_dump` to Cloudflare R2 (see `deploy/config/deploy.yml`). Document and test the restore procedure at least once before launch.
 
 **~~L7 — Deprecated transitive dependency~~** ✓ Fixed — updated `eslint-config-next` to 15.5.14, added pnpm overrides for `esbuild`, `picomatch` (2.x and 4.x paths). `pnpm audit` reports no known vulnerabilities.

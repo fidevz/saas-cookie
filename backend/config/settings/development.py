@@ -2,6 +2,8 @@
 Development settings — never use in production.
 """
 
+import os
+
 from .base import *  # noqa: F401, F403
 
 DEBUG = True
@@ -16,8 +18,12 @@ BASE_DOMAIN = "localhost"
 # Allow all origins in development
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Email via Mailhog (SMTP local) — UI at http://localhost:8025
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# Email — defaults to Mailhog (SMTP local, UI at http://localhost:8025).
+# Override via EMAIL_BACKEND env var, e.g. set to utils.email.ResendEmailBackend
+# to send real emails through Resend in development.
+EMAIL_BACKEND = config(  # noqa: F405
+    "EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
+)
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 EMAIL_USE_TLS = False
@@ -41,19 +47,19 @@ REST_AUTH = {
     "JWT_AUTH_SECURE": False,
 }
 
-# Hardcoded local database — this takes precedence over DATABASE_URL in .env.
+# Use DATABASE_URL when set (e.g. CI), otherwise fall back to local peer/ident auth.
 # new-project.sh replaces "saas_boilerplate" with your project name automatically.
-# USER "" uses peer/ident auth (macOS default). Set to "postgres" if needed.
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "saas_boilerplate",
-        "USER": "",
-        "PASSWORD": "",
-        "HOST": "localhost",
-        "PORT": "5432",
+if not os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "saas_boilerplate",
+            "USER": "",
+            "PASSWORD": "",
+            "HOST": "localhost",
+            "PORT": "5432",
+        }
     }
-}
 
 # Relax throttling in development (high limits for testing)
 REST_FRAMEWORK = {
@@ -67,6 +73,7 @@ REST_FRAMEWORK = {
         "email_change": "1000/hour",
         "password_reset": "1000/hour",
         "verify_email": "1000/hour",
+        "support": "1000/hour",
     },
 }
 

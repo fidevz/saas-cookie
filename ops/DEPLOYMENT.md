@@ -6,10 +6,10 @@
 
 ## Recommended Stack
 
-**All-in-one on a single VPS (recommended):** see `ops/COOLIFY_SETUP.md` for the full guide.
+**All-in-one on a single VPS (recommended):** see `ops/KAMAL_SETUP.md` for the full guide.
 
 ```
-Hetzner VPS (€4.5/mo) + Coolify (free)
+Hetzner VPS (€4.5/mo) + Kamal 2 (free)
   ├── Frontend (Next.js)
   ├── Backend (Django ASGI)
   ├── Worker (Celery)
@@ -24,10 +24,10 @@ Cloudflare (free) — DNS + CDN + wildcard SSL
 
 | Service | Recommended | Alternatives |
 |---------|------------|-------------|
-| Hosting | Coolify on Hetzner | Railway, Render, Fly.io |
-| Database | PostgreSQL (bundled in Coolify) | Supabase, Neon, RDS |
-| Redis | Redis (bundled in Coolify) | Upstash, Redis Cloud |
-| File storage | MinIO (bundled in Coolify) | AWS S3, Cloudflare R2 |
+| Hosting | Kamal on Hetzner | Railway, Render, Fly.io |
+| Database | PostgreSQL (Kamal accessory) | Supabase, Neon, RDS |
+| Redis | Redis (Kamal accessory) | Upstash, Redis Cloud |
+| File storage | MinIO (Kamal accessory) | AWS S3, Cloudflare R2 |
 | Email | Resend | SendGrid, Postmark |
 | Error tracking | Sentry | — |
 | DNS | Cloudflare | Route53 |
@@ -113,7 +113,7 @@ pnpm build
 pnpm start     # serve with Node.js, or deploy to your preferred platform
 ```
 
-> **Coolify (recommended):** The frontend is deployed automatically as part of the Docker Compose stack — no separate step needed. The deploy workflow triggers a Coolify webhook which rebuilds all services.
+> **Kamal (recommended):** Both frontend and backend are deployed by the GitHub Actions deploy workflow. On GitHub Release, CI runs, images are built and pushed to GHCR, and Kamal does a zero-downtime swap on the VPS. See `ops/KAMAL_SETUP.md`.
 >
 > If using an alternative provider (Railway, Render, Vercel), configure your frontend deploy step in `.github/workflows/deploy.yml`.
 

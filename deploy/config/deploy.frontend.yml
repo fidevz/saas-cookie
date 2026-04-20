@@ -1,0 +1,62 @@
+# =============================================================================
+# Kamal 2 — Frontend deploy config (Next.js)
+# Deploy: kamal deploy -c config/deploy.frontend.yml    (from the deploy/ directory)
+# First time: kamal setup -c config/deploy.frontend.yml
+# Rollback: kamal rollback -c config/deploy.frontend.yml
+#
+# Shares the same VPS and kamal-proxy instance as deploy.yml.
+# kamal-proxy routes yourdomain.com and *.yourdomain.com (tenant subdomains) here.
+# =============================================================================
+
+service: YOUR_APP_NAME-frontend
+image: ghcr.io/YOUR_GITHUB_ORG/YOUR_APP_NAME-frontend
+
+servers:
+  web:
+    hosts:
+      - YOUR_SERVER_IP
+    options:
+      memory: 512m
+
+registry:
+  server: ghcr.io
+  username: YOUR_GITHUB_ORG
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+ssh:
+  user: root
+
+builder:
+  arch:
+    - amd64
+  dockerfile: "../frontend/Dockerfile"
+  context: "../frontend"
+  # NEXT_PUBLIC_* vars are baked into the image at build time
+  args:
+    NEXT_PUBLIC_API_URL: https://api.yourdomain.com/api/v1
+    NEXT_PUBLIC_WS_URL: wss://api.yourdomain.com
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_live_REPLACE_ME
+    NEXT_PUBLIC_APP_NAME: YOUR_APP_NAME
+    NEXT_PUBLIC_BASE_DOMAIN: yourdomain.com
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: REPLACE_ME
+  cache:
+    type: registry
+    options: mode=max
+    image: ghcr.io/YOUR_GITHUB_ORG/YOUR_APP_NAME-frontend-build-cache
+
+proxy:
+  ssl: false
+  app_port: 3000
+  # Handles root domain + all tenant subdomains
+  # SSL is terminated at Cloudflare — wildcard certs can't be issued via HTTP challenge
+  host: yourdomain.com,*.yourdomain.com
+  forward_headers: true
+  healthcheck:
+    interval: 3
+    path: /
+    timeout: 5
+
+deploy_timeout: 60
+drain_timeout: 30
+retain_containers: 3

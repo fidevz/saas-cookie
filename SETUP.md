@@ -13,7 +13,7 @@ Setup has three phases:
 |-------|------|--------------|
 | **A — Bootstrap** | 5 min | Run `new-project.sh`, rename everything |
 | **B — Local dev** | 10 min | Get backend + frontend running on your machine |
-| **C — Production** | 30–60 min | Deploy to Coolify on Hetzner |
+| **C — Production** | 30–60 min | Deploy to Kamal on Hetzner |
 
 You can stop after Phase B and come back to Phase C when you're ready to go live.
 
@@ -178,9 +178,9 @@ cd testing && pnpm install && pnpm exec playwright test
 
 ---
 
-## Phase C — Production (Coolify on Hetzner)
+## Phase C — Production (Kamal on Hetzner)
 
-> For the full Coolify setup walkthrough, see `ops/COOLIFY_SETUP.md`.
+> For the full Kamal setup walkthrough, see `ops/KAMAL_SETUP.md`.
 > This section summarises the steps Claude can execute autonomously.
 
 ### C1. Human-only prerequisites
@@ -216,7 +216,7 @@ Most services are reusable across projects — no new account needed:
 | Sentry | ✅ | New project → new DSN |
 | Resend | ✅ | Verify new domain |
 | Google OAuth | ✅ | New GCP project |
-| Hetzner | ✅ | New VPS (or share via Coolify) |
+| Hetzner | ✅ | New VPS (or run multiple projects on same server) |
 | Telegram | ✅ | Same bot, new chat ID |
 
 ### C2. Gather credentials
@@ -259,43 +259,31 @@ Creates in Cloudflare:
 - `A storage → SERVER_IP` (MinIO console)
 - `A * → SERVER_IP` (wildcard → tenant subdomains)
 
-### C4. Install Coolify on the VPS
+### C4. Install Kamal locally
 
 ```bash
-ssh -i $SSH_KEY_PATH root@$SERVER_IP \
-  "curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash"
+gem install kamal
+kamal version   # should show 2.x.x
 ```
 
-Takes ~3 min. Verify: `curl -f http://$SERVER_IP:8000/api/v1/health`
+### C5. Update Kamal config + add GitHub secrets
 
-### C5. Configure Coolify + set environment variables
+Edit `deploy/config/deploy.yml` and `deploy/config/deploy.frontend.yml`:
+- Replace `YOUR_APP_NAME`, `YOUR_GITHUB_ORG`, `YOUR_SERVER_IP`, `yourdomain.com`
+
+Then add all secrets to GitHub Actions per `ops/KAMAL_SETUP.md § 6`.
+
+### C6. First deploy
 
 ```bash
-scripts/setup-coolify.sh
+cd deploy
+kamal setup                                   # backend + accessories
+kamal setup -c config/deploy.frontend.yml     # frontend
 ```
 
-This creates the Docker Compose application in Coolify pointing to your GitHub repo and sets all environment variables via the Coolify API.
+First deploy takes ~8–12 min (builds images and pushes to GHCR).
 
-### C6. Push GitHub secrets
-
-```bash
-scripts/setup-github-secrets.sh
-```
-
-Sets `COOLIFY_WEBHOOK_URL`, `COOLIFY_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` so the deploy workflow can trigger Coolify and send notifications.
-
-### C7. First deploy
-
-Click **Deploy** in the Coolify UI, or trigger via API:
-
-```bash
-curl -X POST "$COOLIFY_WEBHOOK_URL" \
-  -H "Authorization: Bearer $COOLIFY_TOKEN"
-```
-
-Monitor in Coolify → Application → Logs. First build takes ~5 min.
-
-After deploy, run migrations in Coolify → Terminal (backend service):
+After deploy, run migrations:
 
 ```bash
 uv run python manage.py migrate
@@ -303,7 +291,7 @@ uv run python manage.py seed
 uv run python manage.py createsuperuser
 ```
 
-### C8. Register Stripe webhook
+### C7. Register Stripe webhook
 
 In the Stripe Dashboard → Webhooks → Add endpoint:
 
@@ -312,9 +300,9 @@ URL: https://api.YOUR_DOMAIN/api/v1/subscriptions/webhook/
 Events: customer.subscription.* , invoice.* , checkout.session.completed
 ```
 
-Copy the `whsec_...` signing secret → add to Coolify env as `STRIPE_WEBHOOK_SECRET` → redeploy.
+Copy the `whsec_...` signing secret → add `STRIPE_WEBHOOK_SECRET` to GitHub secrets → redeploy via `make deploy`.
 
-### C9. Verify
+### C8. Verify
 
 ```bash
 scripts/verify-setup.sh
@@ -329,7 +317,7 @@ scripts/verify-setup.sh
 - [ ] Stripe checkout completes (test mode)
 - [ ] Admin panel accessible at `https://api.yourdomain.com/<admin-url>/`
 
-### C10. Configure Google OAuth callback
+### C9. Configure Google OAuth callback
 
 In GCP Console → OAuth 2.0 credentials → Authorised redirect URIs, add:
 

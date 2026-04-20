@@ -34,6 +34,7 @@ from utils.throttling import (
     ResendVerificationThrottle,
     VerifyEmailThrottle,
 )
+from utils.turnstile import verify_turnstile_token
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -102,6 +103,12 @@ class RegisterView(APIView):
     throttle_classes = [RegisterThrottle]
 
     def post(self, request: Request) -> Response:
+        verify_turnstile_token(
+            token=request.data.get("turnstile_token"),
+            remote_ip=request.META.get(
+                "HTTP_CF_CONNECTING_IP", request.META.get("REMOTE_ADDR")
+            ),
+        )
         serializer = RegisterSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user, tenant = serializer.save()

@@ -80,6 +80,6 @@ else
   echo "  2. Change the superuser password"
   echo "  3. Register Stripe webhook at https://dashboard.stripe.com/webhooks"
   echo "     URL: https://api.$DOMAIN/api/v1/subscriptions/webhook/"
-  echo "  4. Add STRIPE_WEBHOOK_SECRET to Coolify env vars and redeploy"
+  echo "  4. Add STRIPE_WEBHOOK_SECRET to GitHub secrets and redeploy via `make deploy`"
   echo "  5. Configure Google OAuth callback: https://api.$DOMAIN/api/v1/auth/google/"
 fi

@@ -229,7 +229,7 @@ Fix: Add a section to `ops/MONITORING.md` with recommended services and the endp
 **File:** `ops/DEPLOYMENT.md`
 The deployment guide covers infrastructure setup but does not mention automated database backups or how to test restores.
 
-Fix: Add a backup section documenting Coolify's built-in backup feature or an external alternative (pg_dump cron + S3).
+Fix: Document the pg_dump backup and restore procedure. The backup container (Kamal accessory) runs nightly — test restoring from R2 before launch.
 
 ---
 
@@ -270,5 +270,5 @@ Some form fields rely only on placeholder text for labeling, which fails screen 
 ## Notes
 
 - **Railway and Cloudflare Pages** are not used. CI/CD deploy steps for those platforms have been removed. Each user of this template should configure their own deployment provider in the CI workflows.
-- The `deploy.yml` workflow (triggered on GitHub Release) uses Coolify webhooks, which is the recommended self-hosted deployment approach. See `ops/COOLIFY_SETUP.md`.
+- The `deploy.yml` workflow (triggered on GitHub Release) uses Kamal for zero-downtime deploys. See `ops/KAMAL_SETUP.md`.
 - All `[PLACEHOLDER]` content in `legal/` documents must be filled before going live. These are templates, not final legal documents.

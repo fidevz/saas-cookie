@@ -1,14 +1,24 @@
 import { api } from "@/lib/api";
 
+/** WebSocket() only accepts ws: or wss: — http(s) is a common .env mistake and throws "Invalid URL". */
+function normalizeWebSocketBase(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "ws://localhost:8000";
+  if (t.startsWith("https://")) return "wss://" + t.slice(8).replace(/\/+$/, "");
+  if (t.startsWith("http://")) return "ws://" + t.slice(7).replace(/\/+$/, "");
+  return t.replace(/\/+$/, "");
+}
+
 const _wsUrl = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000";
+const WS_BASE = normalizeWebSocketBase(_wsUrl);
+
 // Enforce encrypted WebSocket connections in production.
-if (process.env.NODE_ENV === "production" && _wsUrl.startsWith("ws://")) {
+if (process.env.NODE_ENV === "production" && WS_BASE.startsWith("ws://")) {
   throw new Error(
-    `NEXT_PUBLIC_WS_URL must use wss:// in production (got: ${_wsUrl}). ` +
+    `NEXT_PUBLIC_WS_URL must use wss:// in production (got: ${WS_BASE}). ` +
       "Unencrypted WebSocket connections are not allowed."
   );
 }
-const WS_BASE = _wsUrl;
 
 class WebSocketClient {
   private ws: WebSocket | null = null;
@@ -30,7 +40,8 @@ class WebSocketClient {
   private async createConnection(onMessage: (data: unknown) => void): Promise<void> {
     try {
       const { ticket } = await api.post<{ ticket: string }>("/notifications/ws-ticket/");
-      this.ws = new WebSocket(`${WS_BASE}/ws/notifications/?ticket=${ticket}`);
+      const wsUrl = `${WS_BASE}/ws/notifications/?ticket=${encodeURIComponent(ticket)}`;
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
@@ -49,7 +60,12 @@ class WebSocketClient {
         // Error handled by onclose
       };
 
-      this.ws.onclose = () => {
+      this.ws.onclose = (event: CloseEvent) => {
+        // Permanent failure codes — do not reconnect
+        if (event.code === 4001 || event.code === 4008 || event.code === 4029) {
+          console.warn(`WebSocket closed permanently (code ${event.code}). Not reconnecting.`);
+          return;
+        }
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           this.reconnect(onMessage);
         }

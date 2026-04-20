@@ -1,10 +1,10 @@
 # VPS Setup Guide
 
-> Secure a fresh Ubuntu 24.04 VPS before installing Coolify and deploying your app.
+> Secure a fresh Ubuntu 24.04 VPS before deploying with Kamal.
 > Follow these steps in order. The whole process takes ~15 minutes.
 >
 > **Prerequisite:** A fresh Hetzner (or any provider) Ubuntu 24.04 server with root SSH access.
-> After completing this guide, continue with `ops/COOLIFY_SETUP.md`.
+> After completing this guide, continue with `ops/KAMAL_SETUP.md`.
 
 ---
 
@@ -124,13 +124,13 @@ ufw default allow outgoing
 # If you changed the SSH port, use that port number instead of 22
 ufw allow 22/tcp
 
-# Allow HTTP and HTTPS — required for Traefik (Coolify's reverse proxy) to work
+# Allow HTTP and HTTPS — required for Kamal's reverse proxy (kamal-proxy) to work
 ufw allow 80/tcp
 ufw allow 443/tcp
 
-# Allow Coolify's management UI — needed during initial setup only
-# We will close this port once Coolify is behind a domain with SSL
-ufw allow 8000/tcp comment 'Coolify UI — close after initial setup'
+# Kamal connects via SSH — no management UI port needed
+
+# No extra ports needed — Kamal uses SSH for management
 
 # Enable the firewall
 ufw enable
@@ -139,13 +139,13 @@ ufw enable
 ufw status verbose
 ```
 
-**What about Docker?** Coolify and Docker manage their own `iptables` rules for container networking. UFW and Docker can conflict in some configurations, but Coolify's installer handles this correctly — you don't need to add rules for container-to-container traffic.
+**What about Docker? Docker manages its own iptables rules for container networking. UFW and Docker can conflict in some configurations, but Kamal's installer handles this correctly — you do not need to add rules for container-to-container traffic.
 
-> After finishing Coolify setup and accessing it via a domain over HTTPS, close port 8000:
+> Kamal does not expose a management port — no cleanup needed after setup.
 > ```bash
 > sudo ufw delete allow 8000/tcp
 > ```
-> There is no reason to leave Coolify's management port exposed to the internet after initial setup.
+> Kamal communicates exclusively via SSH.
 
 ---
 
@@ -346,7 +346,7 @@ systemctl restart ssh
 
 ## 10. Verify Your Hardening
 
-Run through this checklist before proceeding to Coolify installation.
+Run through this checklist before proceeding to Kamal first-time setup.
 
 ```bash
 # 1. You can SSH as deploy (not root)
@@ -381,7 +381,7 @@ free -h
 
 ## Next Step
 
-Your VPS is now hardened and ready. Continue with **[Coolify Setup](./COOLIFY_SETUP.md)** to install Coolify and deploy the app.
+Your VPS is now hardened and ready. Continue with **[Kamal Setup](./KAMAL_SETUP.md)** to deploy the app.
 
 ---
 

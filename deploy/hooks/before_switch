@@ -1,0 +1,11 @@
+#!/bin/bash
+# Runs before the new web container starts receiving traffic.
+# Applies any pending Django migrations.
+# Only runs for the web role (not worker/beat).
+
+set -o errexit
+set -o pipefail
+
+echo "Running Django migrations..."
+kamal app exec -i 'uv run python manage.py migrate --noinput'
+echo "Migrations complete."

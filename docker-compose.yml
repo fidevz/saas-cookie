@@ -1,12 +1,13 @@
 # =============================================================================
-# PRODUCTION ONLY — This file is for Coolify deployment on a VPS.
+# PRODUCTION ONLY — This file is a reference for local development and CI.
+# Production is deployed via Kamal (see deploy/config/deploy.yml).
 # Do NOT run `docker compose up` locally for development.
 # Local development uses native tools: uv, npm, PostgreSQL, Redis directly.
 # See README.md → Quick Start for local dev instructions.
 # =============================================================================
 
 networks:
-  # Public-facing services (frontend, backend) receive external traffic via Coolify proxy.
+  # Public-facing services (frontend, backend) receive external traffic via kamal-proxy.
   public:
     driver: bridge
   # Internal services (db, redis, minio) are NOT reachable from the host.
@@ -27,8 +28,6 @@ services:
         NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL}
         NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     networks:
       - public
     depends_on:
@@ -47,10 +46,37 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     command: uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --workers 2
-    env_file:
-      - ./backend/.env
-    ports:
-      - "8000:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL}
+      SENTRY_DSN: ${SENTRY_DSN}
+      FEATURE_TEAMS: ${FEATURE_TEAMS}
+      FEATURE_BILLING: ${FEATURE_BILLING}
+      FEATURE_NOTIFICATIONS: ${FEATURE_NOTIFICATIONS}
+      APP_NAME: ${APP_NAME}
+      ADMIN_URL: ${ADMIN_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL}
+      AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+      USE_S3: "True"
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      AWS_STORAGE_BUCKET_NAME: ${MINIO_BUCKET:-media}
+      AWS_S3_ENDPOINT_URL: http://minio:9000
     networks:
       - public
       - internal
@@ -60,7 +86,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      test: ["CMD", "curl", "-f", "-H", "Host: localhost", "http://127.0.0.1:8000/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -78,8 +104,23 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     command: uv run celery -A config worker -l info --concurrency 2
-    env_file:
-      - ./backend/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL}
+      SENTRY_DSN: ${SENTRY_DSN}
+      FEATURE_TEAMS: ${FEATURE_TEAMS}
+      FEATURE_BILLING: ${FEATURE_BILLING}
+      FEATURE_NOTIFICATIONS: ${FEATURE_NOTIFICATIONS}
+      USE_S3: "True"
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      AWS_STORAGE_BUCKET_NAME: ${MINIO_BUCKET:-media}
+      AWS_S3_ENDPOINT_URL: http://minio:9000
     networks:
       - internal
     depends_on:
@@ -100,8 +141,16 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     command: uv run celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    env_file:
-      - ./backend/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      SENTRY_DSN: ${SENTRY_DSN}
+      FEATURE_TEAMS: ${FEATURE_TEAMS}
+      FEATURE_BILLING: ${FEATURE_BILLING}
+      FEATURE_NOTIFICATIONS: ${FEATURE_NOTIFICATIONS}
     networks:
       - internal
     depends_on:
@@ -173,7 +222,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
     volumes:
       - minio_data:/data
-    # No ports: — MinIO is accessed only via the Coolify reverse proxy (traefik).
+    # No ports: — MinIO is accessed only from the internal Docker network.
     # S3 API:     https://storage.yourdomain.com  → port 9000 (internal)
     # Console:    https://storage-ui.yourdomain.com → port 9001 (internal)
     networks:

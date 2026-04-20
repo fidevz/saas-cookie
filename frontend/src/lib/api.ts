@@ -1,6 +1,7 @@
 import { ApiError } from "@/types";
+import { joinApiUrl } from "@/lib/join-url";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").trim() || "/api/v1";
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -22,7 +23,7 @@ function getAccessToken(): string | null {
 
 async function handleRefresh(): Promise<string | null> {
   try {
-    const response = await fetch(`${API_BASE}/auth/token/refresh/`, {
+    const response = await fetch(joinApiUrl(API_BASE, "/auth/token/refresh/"), {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -69,8 +70,9 @@ class ApiClient {
   ): Promise<T> {
     const { skipAuth = false, skipRefresh = false, ...fetchOptions } = options;
 
+    const isFormData = fetchOptions.body instanceof FormData;
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(fetchOptions.headers as Record<string, string>),
     };
 
@@ -86,7 +88,7 @@ class ApiClient {
       headers["X-CSRFToken"] = csrfToken;
     }
 
-    const response = await fetch(`${API_BASE}${path}`, {
+    const response = await fetch(joinApiUrl(API_BASE, path), {
       ...fetchOptions,
       headers,
       credentials: "include",
@@ -157,6 +159,45 @@ class ApiClient {
 
   async delete(path: string): Promise<void> {
     return this.request<void>(path, { method: "DELETE" });
+  }
+
+  async postMultipart<T>(path: string, data: FormData): Promise<T> {
+    return this.request<T>(path, { method: "POST", body: data });
+  }
+
+  async patchMultipart<T>(path: string, data: FormData): Promise<T> {
+    return this.request<T>(path, { method: "PATCH", body: data });
+  }
+
+  async getBlob(path: string): Promise<{ blob: Blob; filename: string }> {
+    const doFetch = (token: string | null) => {
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return fetch(joinApiUrl(API_BASE, path), {
+        method: "GET",
+        headers,
+        credentials: "include",
+      });
+    };
+
+    let response = await doFetch(getAccessToken());
+
+    if (response.status === 401) {
+      const newToken = await handleRefresh();
+      if (newToken) {
+        response = await doFetch(newToken);
+      } else {
+        if (typeof window !== "undefined") window.location.href = "/auth/login";
+        throw new Error("Session expired");
+      }
+    }
+
+    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+    const blob = await response.blob();
+    const disposition = response.headers.get("Content-Disposition") ?? "";
+    const match = disposition.match(/filename="?([^";\n]+)"?/);
+    const filename = match?.[1] ?? "download";
+    return { blob, filename };
   }
 }
 

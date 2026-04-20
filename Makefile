@@ -1,4 +1,4 @@
-.PHONY: test test-frontend test-frontend-watch test-frontend-coverage lint fmt build e2e e2e-ui e2e-debug e2e-headed release-patch release-minor release-major
+.PHONY: test test-frontend test-frontend-watch test-frontend-coverage lint fmt build e2e e2e-ui e2e-debug e2e-headed release-patch release-minor release-major deploy deploy-frontend rollback rollback-frontend kamal-logs kamal-shell
 
 # ─── Dev ──────────────────────────────────────────────────────────────────────
 
@@ -38,7 +38,7 @@ e2e-debug:
 e2e-headed:
 	cd testing && pnpm exec playwright test --headed $(ARGS)
 
-# ─── Docker ───────────────────────────────────────────────────────────────────
+# ─── Docker (local dev reference only — production uses Kamal) ────────────────
 
 build:
 	docker compose build
@@ -51,6 +51,26 @@ down:
 
 logs:
 	docker compose logs -f
+
+# ─── Kamal (production) ───────────────────────────────────────────────────────
+
+deploy:
+	cd deploy && kamal redeploy
+
+deploy-frontend:
+	cd deploy && kamal redeploy -c config/deploy.frontend.yml
+
+rollback:
+	cd deploy && kamal rollback
+
+rollback-frontend:
+	cd deploy && kamal rollback -c config/deploy.frontend.yml
+
+kamal-logs:
+	cd deploy && kamal app logs -f
+
+kamal-shell:
+	cd deploy && kamal app exec -i bash
 
 # ─── Release ──────────────────────────────────────────────────────────────────
 # These are helpers — Claude reads RELEASE.md and uses these as building blocks.

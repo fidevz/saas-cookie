@@ -4,6 +4,7 @@ Root URL configuration.
 
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
@@ -30,11 +31,15 @@ urlpatterns = [
             ]
         ),
     ),
-    # API schema & docs
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # API schema & docs (staff only in production)
+    path(
+        "api/schema/",
+        staff_member_required(SpectacularAPIView.as_view()),
+        name="schema",
+    ),
     path(
         "api/docs/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
+        staff_member_required(SpectacularSwaggerView.as_view(url_name="schema")),
         name="swagger-ui",
     ),
     # Health check

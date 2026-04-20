@@ -250,7 +250,7 @@ Three flags control major features — all default to `True`:
 
 **Local development:** `USE_S3=False` (default) — files are written to local disk. No additional setup required.
 
-**Production (Coolify):** MinIO is bundled in `docker-compose.yml` as an S3-compatible store. Set `USE_S3=True` and configure the env vars below. Django uses `django-storages` with `S3Boto3Storage` pointing to the MinIO container.
+**Production (Kamal):** MinIO is bundled in `docker-compose.yml` as an S3-compatible store. Set `USE_S3=True` and configure the env vars below. Django uses `django-storages` with `S3Boto3Storage` pointing to the MinIO container.
 
 > `docker-compose.yml` is **production-only** — do not run it locally. MinIO is only needed when testing S3 behaviour explicitly.
 
@@ -275,7 +275,7 @@ When asked to do the initial project setup, always read `SETUP.md` first and fol
 | Script | What it does |
 |--------|-------------|
 | `setup-dns.sh` | Creates all DNS records in Cloudflare via API |
-| `setup-coolify.sh` | Configures Coolify project + app via API |
+| `scripts/setup-github-secrets.sh` | Pushes GitHub Actions secrets for CI/CD |
 | `setup-github-secrets.sh` | Pushes all secrets to GitHub Actions |
 | `verify-setup.sh` | Verifies the full stack after deploy |
 | `bump-version.sh` | Bumps version in pyproject.toml + package.json |
@@ -310,16 +310,16 @@ Version is stored in two files — always keep them in sync:
 
 ## Deployment
 
-Full stack runs via Docker Compose on a single VPS with Coolify. See `ops/COOLIFY_SETUP.md`.
+Full stack runs on a single VPS with Kamal 2. See `ops/KAMAL_SETUP.md` for the full guide.
 
-Deploy flow: GitHub Release → GitHub Action → Coolify webhook → rebuild → Telegram notification.
+Deploy flow: GitHub Release → GitHub Action → Kamal zero-downtime deploy → Telegram notification.
 
 ## CI/CD
 
 GitHub Actions workflows:
 - `.github/workflows/backend.yml` — runs on push: lint (ruff) + tests (pytest)
 - `.github/workflows/frontend.yml` — runs on push: lint (eslint) + type check (tsc)
-- `.github/workflows/deploy.yml` — runs on GitHub Release: triggers Coolify deploy + Telegram notification
+- `.github/workflows/deploy.yml` — runs on GitHub Release: triggers Kamal deploy + Telegram notification
 
 ---
 

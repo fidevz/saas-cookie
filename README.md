@@ -152,7 +152,7 @@ The `marketing/` folder contains a complete AI-operated marketing system. Fill i
 | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | System design and request flows |
 | [`docs/DECISIONS.md`](./docs/DECISIONS.md) | Why key technical choices were made |
 | [`docs/TODO.md`](./docs/TODO.md) | Known production gaps and backlog |
-| [`ops/COOLIFY_SETUP.md`](./ops/COOLIFY_SETUP.md) | Step-by-step production deployment (Coolify on Hetzner) |
+| [`ops/KAMAL_SETUP.md`](./ops/KAMAL_SETUP.md) | Step-by-step production deployment (Kamal 2 on Hetzner) |
 | [`ops/DEPLOYMENT.md`](./ops/DEPLOYMENT.md) | Deployment reference, env vars, rollback |
 | [`ops/LAUNCH_CHECKLIST.md`](./ops/LAUNCH_CHECKLIST.md) | Pre-launch checklist |
 | [`SECURITY.md`](./SECURITY.md) | Security policy and reporting |

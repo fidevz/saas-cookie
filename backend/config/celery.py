@@ -31,6 +31,10 @@ app.conf.beat_schedule = {
         "task": "apps.core.tasks.cleanup_old_audit_logs",
         "schedule": crontab(hour=3, minute=0),  # Every day at 03:00 UTC
     },
+    "cleanup-old-notifications": {
+        "task": "apps.notifications.tasks.cleanup_old_notifications",
+        "schedule": crontab(hour=4, minute=0),  # Every day at 04:00 UTC
+    },
 }
 
 

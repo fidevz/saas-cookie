@@ -153,7 +153,7 @@ mkdir -p "$OUTPUT_DIR"
 # --- Copy boilerplate ---
 print_step "Copying boilerplate..."
 
-DIRS_TO_COPY=("backend" "frontend" "testing" ".github" "docs" "ops")
+DIRS_TO_COPY=("backend" "frontend" "testing" ".github" "docs" "ops" "deploy" "scripts" "backup")
 
 for dir in "${DIRS_TO_COPY[@]}"; do
   if [[ -d "${SCRIPT_DIR}/${dir}" ]]; then
@@ -178,7 +178,7 @@ for dir in "${DIRS_TO_COPY[@]}"; do
 done
 
 # Copy root-level files
-ROOT_FILES=(".gitignore" "docker-compose.yml" "README.md" "CLAUDE.md" "SETUP.md" "RELEASE.md")
+ROOT_FILES=(".gitignore" "docker-compose.yml" "Makefile" "README.md" "CLAUDE.md" "SETUP.md" "RELEASE.md" "CHANGELOG.md" "BACKLOG.md" "SECURITY.md")
 for file in "${ROOT_FILES[@]}"; do
   if [[ -f "${SCRIPT_DIR}/${file}" ]]; then
     cp "${SCRIPT_DIR}/${file}" "${OUTPUT_DIR}/${file}"
@@ -318,7 +318,7 @@ echo -e "  ${YELLOW}□${NC} Sentry:       SENTRY_DSN (optional)"
 echo ""
 echo -e "${BOLD}━━━ Documentation ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo -e "  Deployment:   ${OUTPUT_DIR}/ops/COOLIFY_SETUP.md"
+echo -e "  Deployment:   ${OUTPUT_DIR}/ops/KAMAL_SETUP.md"
 echo -e "  Architecture: ${OUTPUT_DIR}/docs/ARCHITECTURE.md"
 echo -e "  Decisions:    ${OUTPUT_DIR}/docs/DECISIONS.md"
 echo -e "  Launch:       ${OUTPUT_DIR}/ops/LAUNCH_CHECKLIST.md"
